@@ -1,9 +1,11 @@
 api:
-  key: 2da48326cc6155cf82910357b0091e4890243b127a640e18720f814d1bc04369
-  secret: 4a1fd0998a4db54815a71149cf4b46ac7d4f6147884b19e67daaf298ad3bb8445ab39c6291a2eef593de1fbe5a01d1640325d557f355412a84fdd6e1658c11bd
+  key:
+  secret:
   base-url: "https://api.bitvavo.com"
 bitvavo:
-  autoSellProfit: 1
+  startTimestamp: 1
+  autoSellProfitPercentage: 1
+  autoRebuy: 0
   feeType: TAKER
   defaultCurrency: EUR
   endpoints:
@@ -15,7 +17,23 @@ bitvavo:
     order: "/v2/order"
     symbols: "/v2/balance"
     symbol: "/v2/balance?symbol={0}"
-    time: "/v2/time"
     tickerPrice: "/v2/ticker/price?market={0}"
+    trades: "/v2/trades?market={0}&start={1}"
     withdrawal: "/v2/withdrawal"
-  withdrawAddress: "BE80001813403377"
+  minimumRemainingLimit: 100
+  withdrawAddress: "BE1234567890"
+spring:
+  jackson:
+    deserialization:
+      read-date-timestamps-as-nanoseconds: false
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cryptobot
+    username: cryptobot
+    password: cryptobot
+  flyway:
+    user: cryptobot_dba
+    password: cryptobot_dba
+logging:
+  level:
+    ROOT: error
+    be.mathiasbosman.cryptobot: debug

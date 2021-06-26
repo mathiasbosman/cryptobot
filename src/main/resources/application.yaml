@@ -5,7 +5,7 @@ api:
 bitvavo:
   startTimestamp: 1
   autoWithdrawTreshold: 100
-  autoSellProfitPercentage: 1
+  autoSellTreshold: 1
   autoRebuy: 0
   feeType: TAKER
   defaultCurrency: EUR

@@ -80,21 +80,13 @@ public class BitvavoService implements CryptoService {
     return getMarketName(sourceCode, config.getDefaultCurrency());
   }
 
-  private boolean hasProfit(double currentValue, double estimation, double percentageToSurpass) {
-    double increasedValue = currentValue * (percentageToSurpass / 100);
-    double valueToPass = currentValue + increasedValue;
-    double diff = estimation - valueToPass;
-    log.info("Estimated return: {} value to pass: {} difference: {}",
-        estimation, valueToPass, diff);
-    return diff >= 0;
-  }
-
   @Override
-  public void sellOnProfit(double profitPercentage, String liquidCurrency, double autoRebuy) {
-    if (profitPercentage <= 0) {
-      log.info("No profit percentage set. Will not auto sell.");
+  public void sellOnProfit(double profitTreshold, String liquidCurrency, double autoRebuy) {
+    if (profitTreshold <= 0) {
+      log.warn("No profit percentage set. Will not auto sell.");
       return;
     }
+    log.info("Checking auto profits with a treshold of {}%", profitTreshold);
     // find fees
     Fees fees = apiConsumer.getAccountInfo().getFees();
     // find all current symbols
@@ -110,11 +102,15 @@ public class BitvavoService implements CryptoService {
       double price = apiConsumer.getTickerPrice(marketCode).getPrice();
       double fee = getFee(availableAmount, price, fees.getMaker());
       double estimation = availableAmount * price - fee;
-      log.info("Checking {} (currently: {}). Buying {} ~ {} (fee: {})",
-          marketCode, decimalFormat.format(currentValue), availableAmount,
-          decimalFormat.format(estimation), fee);
-
-      if (hasProfit(currentValue, estimation, profitPercentage)) {
+      double valueToIncrease = currentValue * (profitTreshold / 100);
+      double valueToPass = currentValue + valueToIncrease;
+      boolean hasProfit = estimation >= valueToPass;
+      log.debug("Check {} holding: {} need: {} ({})",
+          marketCode,
+          decimalFormat.format(estimation),
+          decimalFormat.format(valueToPass),
+          decimalFormat.format(estimation - valueToPass));
+      if (hasProfit) {
         log.info("Selling {}", availableAmount);
         BitvavoOrderResponse order = sell(symbol, availableAmount);
         log.info("{} sold {} at {}. (fee: {}) ", order.getMarketCode(),

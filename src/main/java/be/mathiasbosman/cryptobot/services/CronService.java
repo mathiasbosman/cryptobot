@@ -28,7 +28,7 @@ public class CronService {
   public void autoSellOnProfit() {
     updateTrades();
     cryptoService.sellOnProfit(
-        config.getAutoSellProfitPercentage(),
+        config.getAutoSellTreshold(),
         config.getDefaultCurrency(),
         config.getAutoRebuy());
   }

@@ -15,7 +15,7 @@ public class BitvavoConfig {
   public static final String PREFIX = "bitvavo";
 
   private double autoRebuy;
-  private double autoSellProfitPercentage;
+  private double autoSellTreshold;
   private double autoWithdrawTreshold;
   private String defaultCurrency = "EUR";
   private int minimumRemainingLimit = 1;

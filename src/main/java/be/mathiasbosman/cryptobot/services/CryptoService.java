@@ -23,7 +23,7 @@ public interface CryptoService {
 
   String getDefaultMarketName(String symbolCode);
 
-  void sellOnProfit(double profitPercentage, String liquidCurrency, double autoRebuy);
+  void sellOnProfit(double profitQuote, String liquidCurrency, double autoRebuy);
 
   void withdraw(String targetSymbol, double treshold, String address);
 }

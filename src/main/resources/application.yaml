@@ -3,12 +3,6 @@ api:
   secret:
   base-url: "https://api.bitvavo.com"
 bitvavo:
-  startTimestamp: 1
-  autoWithdrawTreshold: 100
-  autoSellTreshold: 1
-  autoRebuy: 0
-  feeType: TAKER
-  defaultCurrency: EUR
   endpoints:
     account: "/v2/account"
     asset: "/v2/assets?symbol={0}"
@@ -21,8 +15,14 @@ bitvavo:
     tickerPrice: "/v2/ticker/price?market={0}"
     trades: "/v2/trades?market={0}&start={1}"
     withdrawal: "/v2/withdrawal"
-  minimumRemainingLimit: 100
-  withdrawAddress:
+  start-timestamp: 1
+  withdraw-address: ""
+  minimum-remaining-limit: 100
+  default-currency: EUR
+  fee-type: TAKER
+  auto-withdraw-treshold: 100
+  auto-sell-treshold: 1
+  auto-rebuy: 0
 spring:
   jackson:
     deserialization:

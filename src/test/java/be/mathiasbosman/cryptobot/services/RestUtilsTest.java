@@ -36,7 +36,7 @@ class RestUtilsTest {
   @Test
   void getFormatter() {
     Instant instant = Instant.ofEpochMilli(1624472520000L);
-    String format = RestUtils.getFormatter("yyyy-MM-dd HH:mm::ss").format(instant);
+    String format = RestUtils.getDateTimeFormatter("yyyy-MM-dd HH:mm::ss").format(instant);
     assertThat(format).isEqualTo("2021-06-23 20:22::00");
   }
 }

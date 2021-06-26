@@ -24,7 +24,7 @@ public class RestUtils {
     return UriComponentsBuilder.fromHttpUrl(formatUri(url, params)).toUriString();
   }
 
-  public static DateTimeFormatter getFormatter(String pattern) {
+  public static DateTimeFormatter getDateTimeFormatter(String pattern) {
     return DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault());
   }
 }

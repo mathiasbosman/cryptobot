@@ -29,7 +29,7 @@ public class TradeEntity implements DbEntity {
   private Double amount;
   private Double price;
   private Double feePaid;
-  private Double totalCost;
+  private boolean taker;
   private Instant timestamp;
 }
 

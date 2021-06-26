@@ -23,7 +23,7 @@ public class ApiConfig {
 
   @Bean
   public DateTimeFormatter dateTimeFormatter() {
-    return RestUtils.getFormatter(dateTimeFormat);
+    return RestUtils.getDateTimeFormatter(dateTimeFormat);
   }
 }
 

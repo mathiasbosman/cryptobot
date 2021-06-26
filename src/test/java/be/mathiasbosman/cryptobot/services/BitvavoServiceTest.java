@@ -1,18 +1,17 @@
 package be.mathiasbosman.cryptobot.services;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
-//todo finish this
+@Slf4j
 class BitvavoServiceTest {
 
-  @Test
-  void estimateBuyCost() {
-    // assertThat(estimateBuyCost(842.37255405, 0.0050919, 0.0025)).isEqualTo(4.30);
-    // assertThat(estimateBuyCost(1001.16706752, 0.0049319, 0.0025)).isEqualTo(4.95);
-  }
+  private final BitvavoService service = new BitvavoService(null, null, null);
 
   @Test
-  void estimateSellingReturn() {
-    // assertThat(estimateSellingReturn(995.36759319, 0.0049940, 0.0025)).isEqualTo(4.95);
+  void getRoundedFee() {
+    assertThat(service.getFee(100, 0.5, 0.0025)).isEqualTo(0.13);
   }
 }

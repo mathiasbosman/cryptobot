@@ -6,7 +6,6 @@ import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoTrade;
 import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
 import be.mathiasbosman.cryptobot.persistency.repositories.TradeRepository;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,8 +26,8 @@ public class TradeService {
     trade.setPrice(t.getPrice());
     trade.setMarketCode(t.getMarketCode());
     trade.setOrderSide(t.getSide());
-    trade.setTotalCost(t.getAmount() * t.getPrice() - t.getFee());
     trade.setTimestamp(t.getTimestamp());
+    trade.setTaker(t.isTaker());
     return trade;
   }
 
@@ -58,20 +57,6 @@ public class TradeService {
   @Transactional(readOnly = true)
   public TradeEntity getTrade(String marketCode, String orderId) {
     return repository.getByOrderIdAndMarketCode(orderId, marketCode);
-  }
-
-  /**
-   * Returns the current value for a certain market
-   *
-   * @param marketCode The code of the market
-   * @return Negative or positive value
-   */
-  public double getCurrentValue(String marketCode) {
-    List<TradeEntity> allTrades = getAllTrades(marketCode);
-    AtomicReference<Double> value = new AtomicReference<>((double) 0);
-    allTrades.forEach(t -> value.updateAndGet(v ->
-        t.getOrderSide().equals(OrderSide.BUY) ? v - t.getTotalCost() : v + t.getTotalCost()));
-    return value.get();
   }
 
   /**

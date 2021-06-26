@@ -9,27 +9,24 @@ import be.mathiasbosman.cryptobot.api.entities.Symbol;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoAccount.Fees;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoOrderResponse;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoSymbol;
+import java.text.DecimalFormat;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@AllArgsConstructor
 public class BitvavoService implements CryptoService {
 
   private final BitvavoConsumer apiConsumer;
   private final BitvavoConfig config;
   private final TradeService tradeService;
 
-  private Fees fees;
-
-  public BitvavoService(BitvavoConsumer apiConsumer,
-      BitvavoConfig config, TradeService tradeService) {
-    this.apiConsumer = apiConsumer;
-    this.config = config;
-    this.tradeService = tradeService;
-  }
+  private static final DecimalFormat decimalFormat = new DecimalFormat("##.00");
 
   @Override
   public List<BitvavoSymbol> getCurrentCrypto() {
@@ -40,20 +37,10 @@ public class BitvavoService implements CryptoService {
   }
 
   @Override
-  public double estimateBuyCost(double amount, double price, double feeMultiplier) {
-    double cost = amount * price;
-    double fee = cost * feeMultiplier;
-    double totalCost = cost + fee;
-    return Math.round(totalCost * 100) / 100.0;
-  }
-
-  @Override
-  public double estimateSellingReturn(double amount, double price, double feeMultiplier) {
-    //todo, not sure if this is actually correct
-    double cost = amount * price;
-    double fee = Math.ceil(cost * feeMultiplier * 100) / 100.0;
-    double totalCost = cost - fee;
-    return Math.round(totalCost * 100) / 100.0;
+  public double getFee(double amount, double price, double feeMultipler) {
+    double subCost = amount * price;
+    double fee = subCost * feeMultipler;
+    return Math.ceil(fee * 100) / 100.0;
   }
 
   @Override
@@ -70,9 +57,12 @@ public class BitvavoService implements CryptoService {
 
   @Override
   public BitvavoOrderResponse buy(Market market, double amount) {
-    log.info("Buying {} in {}", amount, market.getCode());
-    return apiConsumer
-        .newOrder(market.getCode(), OrderSide.BUY, OrderType.MARKET, amount);
+    return buy(market.getCode(), amount);
+  }
+
+  private BitvavoOrderResponse buy(String marketCode, double amount) {
+    log.info("Buying {} in {}", amount, marketCode);
+    return apiConsumer.newOrder(marketCode, OrderSide.BUY, OrderType.MARKET, amount);
   }
 
   @Override
@@ -91,11 +81,10 @@ public class BitvavoService implements CryptoService {
   }
 
   private boolean hasProfit(double currentValue, double estimation, double percentageToSurpass) {
-    double currentAbsValue = Math.abs(currentValue);
-    double increasedValue = currentAbsValue * (percentageToSurpass / 100);
-    double valueToPass = currentAbsValue + increasedValue;
+    double increasedValue = currentValue * (percentageToSurpass / 100);
+    double valueToPass = currentValue + increasedValue;
     double diff = estimation - valueToPass;
-    log.trace("Estimated return: {} value to pass: {} difference: {}",
+    log.info("Estimated return: {} value to pass: {} difference: {}",
         estimation, valueToPass, diff);
     return diff >= 0;
   }
@@ -106,32 +95,51 @@ public class BitvavoService implements CryptoService {
       log.info("No profit percentage set. Will not auto sell.");
       return;
     }
-
     // find fees
-    fees = apiConsumer.getAccountInfo().getFees();
-    log.info("Checking for auto profits ({}%) taker fee = {} maker fee = {}",
-        profitPercentage, fees.getTaker(), fees.getMaker());
+    Fees fees = apiConsumer.getAccountInfo().getFees();
     // find all current symbols
     List<BitvavoSymbol> currentCrypto = getCurrentCrypto();
     currentCrypto.forEach(symbol -> {
       double availableAmount = symbol.getAvailable();
       String marketCode = getMarketName(symbol.getCode(), liquidCurrency);
-      double currentValue = tradeService.getCurrentValue(marketCode);
-      if (currentValue > 0) {
+      double currentValue = getCurrentValue(marketCode);
+      if (currentValue <= 0) {
         throw new IllegalStateException(
-            "Current value of " + symbol.getCode() + " is higher then 0 (" + currentValue + ")");
+            "Current value of " + symbol.getCode() + " is <= 0 (" + currentValue + ")");
       }
       double price = apiConsumer.getTickerPrice(marketCode).getPrice();
-      double estimation = estimateSellingReturn(availableAmount, price, fees.getMaker());
-      log.debug("Checking {} ({} ~ {})", marketCode, availableAmount, estimation);
+      double fee = getFee(availableAmount, price, fees.getMaker());
+      double estimation = availableAmount * price - fee;
+      log.info("Checking {} (currently: {}). Buying {} ~ {} (fee: {})",
+          marketCode, decimalFormat.format(currentValue), availableAmount,
+          decimalFormat.format(estimation), fee);
 
       if (hasProfit(currentValue, estimation, profitPercentage)) {
         log.info("Selling {}", availableAmount);
         BitvavoOrderResponse order = sell(symbol, availableAmount);
         log.info("{} sold {} at {}. (fee: {}) ", order.getMarketCode(),
             order.getFilledAmount(), order.getPrice(), order.getFeePaid());
+
+        if (autoRebuy > 0) {
+          BitvavoSymbol currency = apiConsumer.getSymbol(liquidCurrency);
+          double quoteToRebuy = Math.max(autoRebuy, currency.getAvailable());
+          buy(marketCode, quoteToRebuy);
+        }
       }
     });
+  }
+
+  private double getCurrentValue(String marketCode) {
+    AtomicReference<Double> value = new AtomicReference<>(0.0);
+    tradeService.getAllTrades(marketCode).forEach(t -> {
+      double subCost = t.getAmount() * t.getPrice();
+      double paidFee = t.getFeePaid();
+      value.updateAndGet(v -> t.getOrderSide().equals(OrderSide.BUY)
+          ? v + subCost + paidFee
+          : v - subCost - paidFee);
+
+    });
+    return value.get();
   }
 
   @Override

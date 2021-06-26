@@ -9,9 +9,7 @@ public interface CryptoService {
 
   List<? extends Symbol> getCurrentCrypto();
 
-  double estimateBuyCost(double amount, double price, double feeMultiplier);
-
-  double estimateSellingReturn(double amount, double price, double feeMultiplier);
+  double getFee(double amount, double price, double feeMultipler);
 
   Order sellAll(Symbol symbolCode);
 

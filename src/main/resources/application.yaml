@@ -36,4 +36,4 @@ spring:
 logging:
   level:
     ROOT: error
-    be.mathiasbosman.cryptobot: debug
+    be.mathiasbosman.cryptobot: info

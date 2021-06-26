@@ -2,7 +2,6 @@ package be.mathiasbosman.cryptobot.services;
 
 import be.mathiasbosman.cryptobot.api.configuration.BitvavoConfig;
 import be.mathiasbosman.cryptobot.api.consumers.BitvavoConsumer;
-import be.mathiasbosman.cryptobot.api.entities.Market;
 import be.mathiasbosman.cryptobot.api.entities.OrderSide;
 import be.mathiasbosman.cryptobot.api.entities.OrderType;
 import be.mathiasbosman.cryptobot.api.entities.Symbol;
@@ -29,38 +28,32 @@ public class BitvavoService implements CryptoService {
   private static final DecimalFormat decimalFormat = new DecimalFormat("##.00");
 
   @Override
-  public List<BitvavoSymbol> getCurrentCrypto() {
+  public Symbol getSymbol(String symbolCode) {
+    return apiConsumer.getSymbol(symbolCode);
+  }
+
+  @Override
+  public List<Symbol> getCurrentCrypto() {
     BitvavoSymbol currencySymbol = getCurrencySymbol();
     return apiConsumer.getSymbols().stream()
         .filter(s -> s.getAvailable() > 0 && !s.getCode().equals(currencySymbol.getCode()))
         .collect(Collectors.toList());
   }
 
-  @Override
-  public double getFee(double amount, double price, double feeMultipler) {
+  private double getFee(double amount, double price, double feeMultipler) {
     double subCost = amount * price;
     double fee = subCost * feeMultipler;
     return Math.ceil(fee * 100) / 100.0;
   }
 
   @Override
-  public BitvavoOrderResponse sellAll(Symbol symbol) {
-    return sell(symbol, symbol.getAvailable());
-  }
-
-  @Override
-  public BitvavoOrderResponse sell(Symbol symbol, double amount) {
-    String marketCode = getDefaultMarketName(symbol.getCode());
+  public BitvavoOrderResponse sell(String marketCode, double amount) {
     return apiConsumer
         .newOrder(marketCode, OrderSide.SELL, OrderType.MARKET, amount);
   }
 
   @Override
-  public BitvavoOrderResponse buy(Market market, double amount) {
-    return buy(market.getCode(), amount);
-  }
-
-  private BitvavoOrderResponse buy(String marketCode, double amount) {
+  public BitvavoOrderResponse buy(String marketCode, double amount) {
     log.info("Buying {} in {}", amount, marketCode);
     return apiConsumer.newOrder(marketCode, OrderSide.BUY, OrderType.MARKET, amount);
   }
@@ -76,8 +69,8 @@ public class BitvavoService implements CryptoService {
   }
 
   @Override
-  public String getDefaultMarketName(String sourceCode) {
-    return getMarketName(sourceCode, config.getDefaultCurrency());
+  public double getMarketPrice(String marketCode) {
+    return apiConsumer.getTickerPrice(marketCode).getPrice();
   }
 
   @Override
@@ -90,7 +83,7 @@ public class BitvavoService implements CryptoService {
     // find fees
     Fees fees = apiConsumer.getAccountInfo().getFees();
     // find all current symbols
-    List<BitvavoSymbol> currentCrypto = getCurrentCrypto();
+    List<Symbol> currentCrypto = getCurrentCrypto();
     currentCrypto.forEach(symbol -> {
       double availableAmount = symbol.getAvailable();
       String marketCode = getMarketName(symbol.getCode(), liquidCurrency);
@@ -99,26 +92,26 @@ public class BitvavoService implements CryptoService {
         throw new IllegalStateException(
             "Current value of " + symbol.getCode() + " is <= 0 (" + currentValue + ")");
       }
-      double price = apiConsumer.getTickerPrice(marketCode).getPrice();
+      double price = getMarketPrice(marketCode);
       double fee = getFee(availableAmount, price, fees.getMaker());
       double estimation = availableAmount * price - fee;
       double valueToIncrease = currentValue * (profitTreshold / 100);
       double valueToPass = currentValue + valueToIncrease;
       boolean hasProfit = estimation >= valueToPass;
       log.debug("Check {} holding: {} need: {} ({})",
-          marketCode,
+          symbol.getCode(),
           decimalFormat.format(estimation),
           decimalFormat.format(valueToPass),
           decimalFormat.format(estimation - valueToPass));
       if (hasProfit) {
         log.info("Selling {}", availableAmount);
-        BitvavoOrderResponse order = sell(symbol, availableAmount);
+        BitvavoOrderResponse order = sell(marketCode, availableAmount);
         log.info("{} sold {} at {}. (fee: {}) ", order.getMarketCode(),
             order.getFilledAmount(), order.getPrice(), order.getFeePaid());
 
         if (autoRebuy > 0) {
           BitvavoSymbol currency = apiConsumer.getSymbol(liquidCurrency);
-          double quoteToRebuy = Math.max(autoRebuy, currency.getAvailable());
+          double quoteToRebuy = Math.min(autoRebuy, currency.getAvailable());
           buy(marketCode, quoteToRebuy);
         }
       }

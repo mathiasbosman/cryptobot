@@ -7,9 +7,11 @@ import be.mathiasbosman.cryptobot.api.entities.OrderSide;
 import be.mathiasbosman.cryptobot.api.entities.OrderType;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoAccount;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoAsset;
+import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoBuyRequest;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoMarket;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoOrderRequest;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoOrderResponse;
+import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoSellRequest;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoSymbol;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoTickerPrice;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoTrade;
@@ -160,7 +162,9 @@ public class BitvavoConsumer implements ApiConsumer, SecuredApiConsumer {
   @Override
   public BitvavoOrderResponse newOrder(String marketCode, OrderSide side, OrderType type,
       double amount) {
-    BitvavoOrderRequest request = new BitvavoOrderRequest(marketCode, side, type, amount);
+    BitvavoOrderRequest request = side.equals(OrderSide.BUY)
+        ? new BitvavoBuyRequest(marketCode, type, amount)
+        : new BitvavoSellRequest(marketCode, type, amount);
     String endpoint = endpoints.getOrder();
     String body = buildRestBody(request);
     return restService.postEntity(

@@ -120,13 +120,13 @@ public class BitvavoService implements CryptoService {
 
   private double getCurrentValue(String marketCode) {
     AtomicReference<Double> value = new AtomicReference<>(0.0);
+    log.trace("Calculating current value for {}", marketCode);
     tradeService.getAllTrades(marketCode).forEach(t -> {
       double subCost = t.getAmount() * t.getPrice();
       double paidFee = t.getFeePaid();
       value.updateAndGet(v -> t.getOrderSide().equals(OrderSide.BUY)
           ? v + subCost + paidFee
           : v - subCost - paidFee);
-
     });
     return value.get();
   }
@@ -134,7 +134,7 @@ public class BitvavoService implements CryptoService {
   @Override
   public void withdraw(String targetSymbol, double treshold, String address) {
     if (0 >= treshold) {
-      log.info("No withdrawaltreshold set. Not withdrawing.");
+      log.warn("No withdrawal treshold set. Not withdrawing.");
       return;
     }
     BitvavoSymbol symbol = apiConsumer.getSymbol(targetSymbol);

@@ -4,6 +4,7 @@ api:
   base-url: "https://api.bitvavo.com"
 bitvavo:
   startTimestamp: 1
+  autoWithdrawTreshold: 100
   autoSellProfitPercentage: 1
   autoRebuy: 0
   feeType: TAKER
@@ -21,7 +22,7 @@ bitvavo:
     trades: "/v2/trades?market={0}&start={1}"
     withdrawal: "/v2/withdrawal"
   minimumRemainingLimit: 100
-  withdrawAddress: "BE1234567890"
+  withdrawAddress:
 spring:
   jackson:
     deserialization:

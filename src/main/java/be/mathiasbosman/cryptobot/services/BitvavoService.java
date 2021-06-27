@@ -182,13 +182,19 @@ public class BitvavoService implements CryptoService {
   double getCurrentValue(List<TradeEntity> trades) {
     AtomicReference<Double> value = new AtomicReference<>(0.0);
     trades.forEach(t -> {
-      double subCost = t.getAmount() * t.getPrice();
-      double paidFee = t.getFeePaid();
+      double cost = calculateCost(t);
       value.updateAndGet(v -> t.getOrderSide().equals(OrderSide.BUY)
-          ? v - subCost + paidFee
-          : v + subCost - paidFee);
+          ? v - cost : v + cost);
     });
     return value.get();
+  }
+
+  double calculateCost(TradeEntity tradeEntity) {
+    double subCost = tradeEntity.getAmount() * tradeEntity.getPrice();
+    double feePaid = tradeEntity.getFeePaid();
+    return tradeEntity.getOrderSide().equals(OrderSide.BUY)
+        ? subCost + feePaid
+        : subCost - feePaid;
   }
 
   /**

@@ -6,6 +6,9 @@ import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
 import be.mathiasbosman.cryptobot.persistency.repositories.TradeRepository;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,5 +57,11 @@ public class TradeService {
   @Transactional(readOnly = true)
   public TradeEntity getLatestTrade(String marketCode) {
     return repository.findFirstByMarketCodeOrderByTimestampDesc(marketCode);
+  }
+
+  public List<TradeEntity> getLatestTrades(int limit) {
+    Sort sort = Sort.sort(TradeEntity.class).by(TradeEntity::getTimestamp).descending();
+    Pageable page = PageRequest.of(0, limit, sort);
+    return repository.findAll(page).getContent();
   }
 }

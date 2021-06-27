@@ -10,10 +10,10 @@ import org.springframework.web.client.RestTemplate;
 
 @EnableScheduling
 @SpringBootApplication
-public class CrytpobotApplication {
+public class CryptobotApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(CrytpobotApplication.class, args);
+		SpringApplication.run(CryptobotApplication.class, args);
 	}
 
 	@Bean

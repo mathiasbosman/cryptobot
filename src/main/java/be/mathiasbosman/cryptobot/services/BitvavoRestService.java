@@ -17,6 +17,7 @@ public class BitvavoRestService extends SimpleRestService {
   private final DateTimeFormatter formatter;
   private final BitvavoConfig config;
   private Integer remainingLimit;
+  private Instant resetTime;
 
   public BitvavoRestService(RestTemplate restTemplate, DateTimeFormatter formatter,
       BitvavoConfig config) {
@@ -36,11 +37,11 @@ public class BitvavoRestService extends SimpleRestService {
     HttpHeaders headers = responseEntity.getHeaders();
     remainingLimit = Integer.parseInt(
         Objects.requireNonNull(headers.get("Bitvavo-Ratelimit-Remaining")).get(0));
-    Instant limitReset = Instant
+    resetTime = Instant
         .ofEpochMilli(Long.parseLong(
             Objects.requireNonNull(headers.get("Bitvavo-Ratelimit-ResetAt")).get(0)));
     log.trace("Post exchange ({}). Remaining limit = {}, reset at {}",
-        endpoint, remainingLimit, formatter.format(limitReset));
+        endpoint, remainingLimit, formatter.format(resetTime));
   }
 
   /**
@@ -51,10 +52,18 @@ public class BitvavoRestService extends SimpleRestService {
    */
   @Override
   public boolean canExecute() {
-    if (remainingLimit != null && remainingLimit < config.getMinimumRemainingLimit()) {
-      log.warn("Remaining API limit = {}", remainingLimit);
-      return false;
+    // if not set yet we can assume it's safe to call the api
+    if (remainingLimit == null || remainingLimit > config.getMinimumRemainingLimit()) {
+      log.trace("Remaining API limit = {} minimum to keep = {}", remainingLimit,
+          config.getMinimumRemainingLimit());
+      return true;
     }
-    return true;
+    log.warn("Remaining API limit = {}", remainingLimit);
+    // if resetTime has passed we can reset
+    if (resetTime.isBefore(Instant.now())) {
+      remainingLimit = null;
+      return true;
+    }
+    return false;
   }
 }

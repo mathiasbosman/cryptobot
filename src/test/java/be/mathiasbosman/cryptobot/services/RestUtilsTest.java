@@ -2,7 +2,6 @@ package be.mathiasbosman.cryptobot.services;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 class RestUtilsTest {
@@ -31,12 +30,5 @@ class RestUtilsTest {
         .isEqualTo("https://path?param=param1&secondParam=true");
     assertThat(RestUtils.resolveUri(baseUri, "param1", 2))
         .isEqualTo("https://path?param=param1&secondParam=2");
-  }
-
-  @Test
-  void getFormatter() {
-    Instant instant = Instant.ofEpochMilli(1624472520000L);
-    String format = RestUtils.getDateTimeFormatter("yyyy-MM-dd HH:mm::ss").format(instant);
-    assertThat(format).isEqualTo("2021-06-23 20:22::00");
   }
 }

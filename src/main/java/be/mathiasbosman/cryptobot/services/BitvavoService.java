@@ -132,8 +132,9 @@ public class BitvavoService implements CryptoService {
 
         if (autoRebuy > 0) {
           BitvavoSymbol currency = apiConsumer.getSymbol(liquidCurrency);
-          double quoteToRebuy = Math.min(autoRebuy, currency.getAvailable());
-          buy(marketCode, quoteToRebuy);
+          if (currency.getAvailable() >= autoRebuy) {
+            buy(marketCode, autoRebuy);
+          }
         }
       }
     }

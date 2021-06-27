@@ -14,8 +14,6 @@ public interface CryptoService {
 
   Order buy(String marketCode, double amount);
 
-  Symbol getCurrencySymbol();
-
   String getMarketName(String symbolCode, String targetMarketCode);
 
   void sellOnProfit(double profitQuote, String liquidCurrency, double autoRebuy);

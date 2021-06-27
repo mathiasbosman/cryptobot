@@ -7,7 +7,11 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.springframework.web.util.UriComponentsBuilder;
 
-public class RestUtils {
+public abstract class RestUtils {
+
+  RestUtils() {
+    // util class
+  }
 
   public static String resolvePath(String... paths) {
     return Arrays.stream(paths).filter(p -> !p.isBlank()).map(p -> {

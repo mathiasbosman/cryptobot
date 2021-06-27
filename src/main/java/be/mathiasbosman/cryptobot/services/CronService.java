@@ -19,6 +19,7 @@ public class CronService {
   private final BitvavoConfig config;
   private final BitvavoConsumer consumer;
   private final BitvavoService cryptoService;
+  private final BitvavoRestService restService;
   private final TradeService tradeService;
 
   /**
@@ -26,6 +27,9 @@ public class CronService {
    */
   @Scheduled(fixedRate = 10000)
   public void autoSellOnProfit() {
+    if (!restService.canExecute()) {
+      return;
+    }
     updateTrades();
     cryptoService.sellOnProfit(
         config.getAutoSellTreshold(),
@@ -38,6 +42,9 @@ public class CronService {
    */
   @Scheduled(cron = "0 0 0/6 ? * *")
   public void autoWithdrawal() {
+    if (!restService.canExecute()) {
+      return;
+    }
     cryptoService.withdraw(
         config.getDefaultCurrency(),
         config.getAutoWithdrawTreshold(),

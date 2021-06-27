@@ -25,6 +25,12 @@ public class BitvavoRestService extends SimpleRestService {
     this.config = config;
   }
 
+  /**
+   * Gets some header information after the exchange has happened
+   *
+   * @param responseEntity Returned entity
+   * @param endpoint       URI of the endpoing
+   */
   @Override
   public <T> void postExchange(ResponseEntity<T> responseEntity, String endpoint) {
     HttpHeaders headers = responseEntity.getHeaders();
@@ -37,8 +43,18 @@ public class BitvavoRestService extends SimpleRestService {
         endpoint, remainingLimit, formatter.format(limitReset));
   }
 
+  /**
+   * Returns wether or not the rest service can be called depending on the remaining limit as
+   * configured.
+   *
+   * @return true or false
+   */
   @Override
   public boolean canExecute() {
-    return remainingLimit == null || remainingLimit > config.getMinimumRemainingLimit();
+    if (remainingLimit != null && remainingLimit < config.getMinimumRemainingLimit()) {
+      log.warn("Remaining API limit = {}", remainingLimit);
+      return false;
+    }
+    return true;
   }
 }

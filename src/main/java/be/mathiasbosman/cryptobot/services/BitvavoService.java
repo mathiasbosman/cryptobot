@@ -8,7 +8,7 @@ import be.mathiasbosman.cryptobot.api.entities.Symbol;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoAccount.Fees;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoOrderResponse;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoSymbol;
-import java.text.DecimalFormat;
+import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -25,89 +25,110 @@ public class BitvavoService implements CryptoService {
   private final BitvavoConfig config;
   private final TradeService tradeService;
 
-  private static final DecimalFormat decimalFormat = new DecimalFormat("##.00");
-
+  /**
+   * Returns the crypto Symbol based on its code
+   *
+   * @param symbolCode The symbolcode
+   * @return Symbol
+   */
   @Override
   public Symbol getSymbol(String symbolCode) {
     return apiConsumer.getSymbol(symbolCode);
   }
 
+  /**
+   * Get all symbols that currently have an available amount except the currency symbol configured
+   *
+   * @return List of symbols
+   */
   @Override
   public List<Symbol> getCurrentCrypto() {
-    BitvavoSymbol currencySymbol = getCurrencySymbol();
     return apiConsumer.getSymbols().stream()
-        .filter(s -> s.getAvailable() > 0 && !s.getCode().equals(currencySymbol.getCode()))
+        .filter(s -> s.getAvailable() > 0 && !s.getCode().equals(config.getDefaultCurrency()))
         .collect(Collectors.toList());
   }
 
-  private double getFee(double amount, double price, double feeMultipler) {
-    double subCost = amount * price;
-    double fee = subCost * feeMultipler;
-    return Math.ceil(fee * 100) / 100.0;
-  }
-
+  /**
+   * Selss a certain amount in a certain market
+   *
+   * @param marketCode Market to sell in
+   * @param amount     Amount to sell
+   * @return BitvavoOrderResponse
+   */
   @Override
   public BitvavoOrderResponse sell(String marketCode, double amount) {
+    log.info("Selling {} in {}", amount, marketCode);
     return apiConsumer
         .newOrder(marketCode, OrderSide.SELL, OrderType.MARKET, amount);
   }
 
+  /**
+   * Buy a certain amount in a certain market
+   *
+   * @param marketCode Market to buy in
+   * @param amount     Amount to buy
+   * @return BitvavoOrderResponse
+   */
   @Override
   public BitvavoOrderResponse buy(String marketCode, double amount) {
     log.info("Buying {} in {}", amount, marketCode);
     return apiConsumer.newOrder(marketCode, OrderSide.BUY, OrderType.MARKET, amount);
   }
 
-  @Override
-  public BitvavoSymbol getCurrencySymbol() {
-    return apiConsumer.getSymbol(config.getDefaultCurrency());
-  }
-
+  /**
+   * Returns the market name used in Bitvavo
+   *
+   * @param sourceCode       The first symbol's code
+   * @param targetMarketCode The target's symbol code
+   * @return Marketname (split with -)
+   */
   @Override
   public String getMarketName(String sourceCode, String targetMarketCode) {
     return sourceCode + "-" + targetMarketCode;
   }
 
+  /**
+   * Reteruns the market price (ticker price) of a market
+   *
+   * @param marketCode The market's code
+   * @return The market price
+   */
   @Override
   public double getMarketPrice(String marketCode) {
     return apiConsumer.getTickerPrice(marketCode).getPrice();
   }
 
+  /**
+   * Sells the asset if the profit treshold is reached
+   *
+   * @param profitTreshold The profit treshold in percentages
+   * @param liquidCurrency The code of the liquid currency (for example EUR)
+   * @param autoRebuy      the amount to automatically rebuy. If not available the minimum will be
+   *                       used
+   */
   @Override
   public void sellOnProfit(double profitTreshold, String liquidCurrency, double autoRebuy) {
     if (profitTreshold <= 0) {
       log.warn("No profit percentage set. Will not auto sell.");
       return;
     }
-    log.info("Checking auto profits with a treshold of {}%", profitTreshold);
-    // find fees
-    Fees fees = apiConsumer.getAccountInfo().getFees();
-    // find all current symbols
-    List<Symbol> currentCrypto = getCurrentCrypto();
-    currentCrypto.forEach(symbol -> {
+    log.debug("Checking auto profits with a treshold of {}%", profitTreshold);
+    for (Symbol symbol : getCurrentCrypto()) {
       double availableAmount = symbol.getAvailable();
       String marketCode = getMarketName(symbol.getCode(), liquidCurrency);
-      double currentValue = getCurrentValue(marketCode);
-      if (currentValue <= 0) {
-        throw new IllegalStateException(
-            "Current value of " + symbol.getCode() + " is <= 0 (" + currentValue + ")");
+      double currentValue = getCurrentValue(tradeService.getAllTrades(marketCode));
+      if (currentValue >= 0) {
+        log.warn("Current value of {} is >= 0 ({}). Are their trades missing?",
+            symbol.getCode(), currentValue);
+        break;
       }
-      double price = getMarketPrice(marketCode);
-      double fee = getFee(availableAmount, price, fees.getMaker());
-      double estimation = availableAmount * price - fee;
-      double valueToIncrease = currentValue * (profitTreshold / 100);
-      double valueToPass = currentValue + valueToIncrease;
-      boolean hasProfit = estimation >= valueToPass;
-      log.debug("Check {} holding: {} need: {} ({})",
-          symbol.getCode(),
-          decimalFormat.format(estimation),
-          decimalFormat.format(valueToPass),
-          decimalFormat.format(estimation - valueToPass));
-      if (hasProfit) {
-        log.info("Selling {}", availableAmount);
+      double marketPrice = getMarketPrice(marketCode);
+      Fees fees = apiConsumer.getAccountInfo().getFees();
+      double fee = getFee(availableAmount, marketPrice, fees.getMaker());
+      if (hasProfit(marketPrice, availableAmount, currentValue, fee, profitTreshold)) {
         BitvavoOrderResponse order = sell(marketCode, availableAmount);
-        log.info("{} sold {} at {}. (fee: {}) ", order.getMarketCode(),
-            order.getFilledAmount(), order.getPrice(), order.getFeePaid());
+        log.info("{} sold {} at {}. (fee: {}) ",
+            order.getMarketCode(), order.getFilledAmount(), order.getPrice(), order.getFeePaid());
 
         if (autoRebuy > 0) {
           BitvavoSymbol currency = apiConsumer.getSymbol(liquidCurrency);
@@ -115,22 +136,67 @@ public class BitvavoService implements CryptoService {
           buy(marketCode, quoteToRebuy);
         }
       }
-    });
+    }
   }
 
-  private double getCurrentValue(String marketCode) {
+  /**
+   * Calculates if profit would be made
+   *
+   * @param marketPrice     The current market price
+   * @param availableAmount The amount that would be sold
+   * @param currentValue    The current value we hold
+   * @param fee             The fee that has to be paid
+   * @param profitTreshold  The treshold in percentages that needs to be met
+   * @return boolean
+   */
+  boolean hasProfit(double marketPrice, double availableAmount, double currentValue, double fee,
+      double profitTreshold) {
+    double estimation = availableAmount * marketPrice - fee;
+    double absValue = Math.abs(currentValue);
+    double valueToIncrease = absValue * (profitTreshold / 100);
+    double valueToPass = absValue + valueToIncrease;
+    return estimation >= valueToPass;
+  }
+
+  /**
+   * Calculates the fee that will have to be paid
+   *
+   * @param amount        The amount of the symbol
+   * @param price         The price of the symbol
+   * @param feeMultiplier The fee multiplier
+   * @return double
+   */
+  double getFee(double amount, double price, double feeMultiplier) {
+    double subCost = amount * price;
+    double fee = subCost * feeMultiplier;
+    return Math.ceil(fee * 100) / 100.0;
+  }
+
+  /**
+   * Gets the current value of trades
+   *
+   * @param trades The trades that need to be checked
+   * @return double
+   */
+  double getCurrentValue(List<TradeEntity> trades) {
     AtomicReference<Double> value = new AtomicReference<>(0.0);
-    log.trace("Calculating current value for {}", marketCode);
-    tradeService.getAllTrades(marketCode).forEach(t -> {
+    trades.forEach(t -> {
       double subCost = t.getAmount() * t.getPrice();
       double paidFee = t.getFeePaid();
       value.updateAndGet(v -> t.getOrderSide().equals(OrderSide.BUY)
-          ? v + subCost + paidFee
-          : v - subCost - paidFee);
+          ? v - subCost + paidFee
+          : v + subCost - paidFee);
     });
     return value.get();
   }
 
+  /**
+   * Withdraw a certain symbol amount to the given address based on a treshold
+   *
+   * @param targetSymbol The symbol to withdaw
+   * @param treshold     The treshold that needs to be passed
+   * @param address      The target address
+   */
   @Override
   public void withdraw(String targetSymbol, double treshold, String address) {
     if (0 >= treshold) {

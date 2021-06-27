@@ -56,9 +56,9 @@
 
   </dependencies>
   <groupId>be.mathiasbosman</groupId>
-  <artifactId>crytpobot</artifactId>
+  <artifactId>cryptobot</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>crytpobot</name>
+  <name>cryptobot</name>
   <properties>
     <java.version>11</java.version>
   </properties>

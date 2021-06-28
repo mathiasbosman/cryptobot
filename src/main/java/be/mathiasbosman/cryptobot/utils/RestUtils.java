@@ -1,9 +1,11 @@
-package be.mathiasbosman.cryptobot.services;
+package be.mathiasbosman.cryptobot.utils;
 
 import java.text.MessageFormat;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -30,5 +32,9 @@ public abstract class RestUtils {
 
   public static DateTimeFormatter getDateTimeFormatter(String pattern) {
     return DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault());
+  }
+
+  public static <T> List<T> objectArrayToList(T[] array) {
+    return array != null ? Arrays.asList(array) : new ArrayList<>();
   }
 }

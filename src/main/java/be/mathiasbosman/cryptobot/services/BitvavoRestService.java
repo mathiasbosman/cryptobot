@@ -1,6 +1,5 @@
 package be.mathiasbosman.cryptobot.services;
 
-import be.mathiasbosman.cryptobot.api.configuration.BitvavoConfig;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -15,15 +14,12 @@ import org.springframework.web.client.RestTemplate;
 public class BitvavoRestService extends SimpleRestService {
 
   private final DateTimeFormatter formatter;
-  private final BitvavoConfig config;
   private Integer remainingLimit;
   private Instant resetTime;
 
-  public BitvavoRestService(RestTemplate restTemplate, DateTimeFormatter formatter,
-      BitvavoConfig config) {
+  public BitvavoRestService(RestTemplate restTemplate, DateTimeFormatter formatter) {
     super(restTemplate);
     this.formatter = formatter;
-    this.config = config;
   }
 
   /**
@@ -53,17 +49,20 @@ public class BitvavoRestService extends SimpleRestService {
   @Override
   public boolean canExecute() {
     // if not set yet we can assume it's safe to call the api
-    if (remainingLimit == null || remainingLimit > config.getMinimumRemainingLimit()) {
-      log.trace("Remaining API limit = {} minimum to keep = {}", remainingLimit,
-          config.getMinimumRemainingLimit());
+    if (remainingLimit == null || remainingLimit > 0) {
+      log.trace("Remaining API limit = {}", remainingLimit);
       return true;
     }
-    log.warn("Remaining API limit = {}", remainingLimit);
     // if resetTime has passed we can reset
     if (resetTime.isBefore(Instant.now())) {
       remainingLimit = null;
       return true;
     }
+    log.warn("Remaining API limit = {}. Reset time = {}", remainingLimit, resetTime);
     return false;
+  }
+
+  public boolean canExecute(int limitweight) {
+    return remainingLimit == null || (canExecute() && remainingLimit >= limitweight);
   }
 }

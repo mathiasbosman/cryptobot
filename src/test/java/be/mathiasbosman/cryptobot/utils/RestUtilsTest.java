@@ -1,7 +1,8 @@
-package be.mathiasbosman.cryptobot.services;
+package be.mathiasbosman.cryptobot.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class RestUtilsTest {
@@ -30,5 +31,13 @@ class RestUtilsTest {
         .isEqualTo("https://path?param=param1&secondParam=true");
     assertThat(RestUtils.resolveUri(baseUri, "param1", 2))
         .isEqualTo("https://path?param=param1&secondParam=2");
+  }
+
+  @Test
+  void objectArrayToList() {
+    List<String> list = List.of("one", "two", "three");
+    String[] array = list.toArray(new String[0]);
+    assertThat(RestUtils.objectArrayToList(null)).isEmpty();
+    assertThat(RestUtils.objectArrayToList(array)).isEqualTo(list);
   }
 }

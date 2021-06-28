@@ -7,11 +7,13 @@ import be.mathiasbosman.cryptobot.services.CryptoService;
 import be.mathiasbosman.cryptobot.services.TradeService;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @AllArgsConstructor
 @RestController("/api")
 public class BotController implements ApiController, TradeController {
@@ -20,8 +22,9 @@ public class BotController implements ApiController, TradeController {
   private final TradeService tradeService;
 
   @Override
-  @GetMapping("/crypto/")
+  @GetMapping("/symbol")
   public Symbol getSymbol(@RequestParam String symbolCode) {
+    log.info("Getting symbol {}", symbolCode);
     return cryptoService.getSymbol(symbolCode);
   }
 

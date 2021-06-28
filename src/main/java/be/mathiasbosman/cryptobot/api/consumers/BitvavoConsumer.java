@@ -18,7 +18,7 @@ import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoTrade;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoWithdrawalRequest;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoWithdrawalResponse;
 import be.mathiasbosman.cryptobot.services.BitvavoRestService;
-import be.mathiasbosman.cryptobot.services.RestUtils;
+import be.mathiasbosman.cryptobot.utils.RestUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +28,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.extern.slf4j.Slf4j;
@@ -72,7 +71,7 @@ public class BitvavoConsumer implements ApiConsumer, SecuredApiConsumer {
     String uri = RestUtils.resolvePath(getBaseUri(), endpoints.getMarkets());
     BitvavoMarket[] marketArray = restService
         .getEntity(RestUtils.resolvePath(uri), BitvavoMarket[].class);
-    return Arrays.stream(marketArray).collect(Collectors.toList());
+    return RestUtils.objectArrayToList(marketArray);
   }
 
   @Override
@@ -86,7 +85,7 @@ public class BitvavoConsumer implements ApiConsumer, SecuredApiConsumer {
   public List<BitvavoAsset> getAssets() {
     String uri = RestUtils.resolvePath(getBaseUri(), endpoints.getAssets());
     BitvavoAsset[] assets = restService.getEntity(uri, BitvavoAsset[].class);
-    return assets != null ? Arrays.stream(assets).collect(Collectors.toList()) : null;
+    return RestUtils.objectArrayToList(assets);
   }
 
   @Override
@@ -120,7 +119,7 @@ public class BitvavoConsumer implements ApiConsumer, SecuredApiConsumer {
     String uri = RestUtils.resolvePath(getBaseUri(), endpoint);
     BitvavoTrade[] trades = restService
         .getEntity(uri, buildHeaders(endpoint), BitvavoTrade[].class);
-    return Arrays.stream(trades).collect(Collectors.toList());
+    return RestUtils.objectArrayToList(trades);
   }
 
   @Override
@@ -129,7 +128,7 @@ public class BitvavoConsumer implements ApiConsumer, SecuredApiConsumer {
     String uri = RestUtils.resolvePath(getBaseUri(), endpoint);
     BitvavoSymbol[] symbols = restService
         .getEntity(uri, buildHeaders(endpoint), BitvavoSymbol[].class);
-    return Arrays.stream(symbols).collect(Collectors.toList());
+    return RestUtils.objectArrayToList(symbols);
   }
 
   @Override

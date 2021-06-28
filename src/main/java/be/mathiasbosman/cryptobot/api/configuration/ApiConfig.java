@@ -1,6 +1,6 @@
 package be.mathiasbosman.cryptobot.api.configuration;
 
-import be.mathiasbosman.cryptobot.services.RestUtils;
+import be.mathiasbosman.cryptobot.utils.RestUtils;
 import java.time.format.DateTimeFormatter;
 import lombok.Getter;
 import lombok.Setter;

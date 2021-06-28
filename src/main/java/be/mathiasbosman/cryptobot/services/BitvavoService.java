@@ -120,11 +120,6 @@ public class BitvavoService implements CryptoService {
       // update trades first if needed
       updateTrades(marketCode);
       double currentValue = getCurrentValue(tradeService.getAllTrades(marketCode));
-      if (currentValue >= 0) {
-        log.warn("Current value of {} is >= 0 ({}). Are their trades missing?",
-            symbol.getCode(), currentValue);
-        break;
-      }
       double marketPrice = getMarketPrice(marketCode);
       Fees fees = apiConsumer.getAccountInfo().getFees();
       double fee = getFee(availableAmount, marketPrice, fees.getMaker());

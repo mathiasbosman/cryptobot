@@ -6,12 +6,14 @@ import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
 import be.mathiasbosman.cryptobot.persistency.repositories.TradeRepository;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @Transactional
 @AllArgsConstructor
@@ -34,6 +36,9 @@ public class TradeService {
   }
 
   public void save(TradeEntity t) {
+    log.info("Saving trade {} ({} - {} - {} - {} - {} - {} @ {})",
+        t.getOrderId(), t.getMarketCode(), t.getOrderType(), t.getOrderSide(),
+        t.getAmount(), t.getPrice(), t.getFeePaid(), t.getTimestamp());
     repository.save(t);
   }
 

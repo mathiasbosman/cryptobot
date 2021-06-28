@@ -9,6 +9,7 @@ import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoAccount.Fees;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoOrderResponse;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoSymbol;
 import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -116,6 +117,8 @@ public class BitvavoService implements CryptoService {
     for (Symbol symbol : getCurrentCrypto()) {
       double availableAmount = symbol.getAvailable();
       String marketCode = getMarketName(symbol.getCode(), liquidCurrency);
+      // update trades first if needed
+      updateTrades(marketCode);
       double currentValue = getCurrentValue(tradeService.getAllTrades(marketCode));
       if (currentValue >= 0) {
         log.warn("Current value of {} is >= 0 ({}). Are their trades missing?",
@@ -138,6 +141,15 @@ public class BitvavoService implements CryptoService {
         }
       }
     }
+  }
+
+  private void updateTrades(String marketCode) {
+    TradeEntity latestTrade = tradeService.getLatestTrade(marketCode);
+    Instant latestTimestamp = latestTrade != null
+        ? latestTrade.getTimestamp()
+        : Instant.ofEpochMilli(config.getStartTimestamp());
+    apiConsumer.getTrades(marketCode, latestTimestamp)
+        .forEach(t -> tradeService.save(TradeService.createTradeEntity(t)));
   }
 
   /**

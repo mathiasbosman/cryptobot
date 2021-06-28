@@ -167,7 +167,7 @@ public class BitvavoService implements CryptoService {
   }
 
   /**
-   * Calculates the fee that will have to be paid
+   * Calculates the fee that will have to be paid. The fee gets rounded upward to a cent
    *
    * @param amount        The amount of the symbol
    * @param price         The price of the symbol

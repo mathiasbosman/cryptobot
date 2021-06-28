@@ -17,9 +17,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 @AllArgsConstructor
-public class TradeService {
+public class TradeService extends AbstractEntityService<TradeEntity> {
 
   private final TradeRepository repository;
+  private static final Sort defaultSort = Sort.sort(TradeEntity.class).by(TradeEntity::getTimestamp)
+      .descending();
+
+  @Override
+  public Sort getDefaultSort() {
+    return defaultSort;
+  }
 
   public static TradeEntity createTradeEntity(BitvavoTrade t) {
     TradeEntity trade = new TradeEntity();
@@ -35,11 +42,11 @@ public class TradeService {
     return trade;
   }
 
-  public void save(TradeEntity t) {
-    log.info("Saving trade {} ({} - {} - {} - {} - {} - {} @ {})",
-        t.getOrderId(), t.getMarketCode(), t.getOrderType(), t.getOrderSide(),
-        t.getAmount(), t.getPrice(), t.getFeePaid(), t.getTimestamp());
-    repository.save(t);
+  public TradeEntity save(TradeEntity t) {
+    log.info("Saving trade {} - {} {} at {} (fee: {}) @ {}",
+        t.getMarketCode(), t.getOrderSide(), t.getAmount(), t.getPrice(), t.getFeePaid(),
+        t.getTimestamp());
+    return repository.save(t);
   }
 
   /**
@@ -65,8 +72,7 @@ public class TradeService {
   }
 
   public List<TradeEntity> getLatestTrades(int limit) {
-    Sort sort = Sort.sort(TradeEntity.class).by(TradeEntity::getTimestamp).descending();
-    Pageable page = PageRequest.of(0, limit, sort);
+    Pageable page = PageRequest.of(0, limit, getDefaultSort());
     return repository.findAll(page).getContent();
   }
 }

@@ -18,7 +18,6 @@ public class BitvavoConfig {
   private double autoSellTreshold;
   private double autoWithdrawTreshold;
   private String defaultCurrency = "EUR";
-  private int minimumRemainingLimit = 1;
   private String withdrawAddress;
   private FeeType feeType = FeeType.TAKER;
   private long startTimestamp = 0;

@@ -17,7 +17,6 @@ bitvavo:
     withdrawal: "/v2/withdrawal"
   start-timestamp: 1
   withdraw-address: ""
-  minimum-remaining-limit: 100
   default-currency: EUR
   fee-type: TAKER
   auto-withdraw-treshold: 100

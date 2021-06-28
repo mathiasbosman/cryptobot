@@ -23,24 +23,24 @@ class BitvavoServiceTest {
   void getCurrentValue() {
     assertThat(service.getCurrentValue(List.of(
         TradeEntityFixture.newTradeEntity(50, 10, 4, OrderSide.BUY)
-    ))).isEqualTo(-496);
+    ))).isEqualTo(-504);
     assertThat(service.getCurrentValue(List.of(
         TradeEntityFixture.newTradeEntity(50, 10, 4, OrderSide.BUY),
         TradeEntityFixture.newTradeEntity(50, 10, 4, OrderSide.BUY)
-    ))).isEqualTo(-992);
+    ))).isEqualTo(-1008);
     assertThat(service.getCurrentValue(List.of(
         TradeEntityFixture.newTradeEntity(50, 10, 4, OrderSide.BUY),
         TradeEntityFixture.newTradeEntity(50, 10, 4, OrderSide.SELL)
-    ))).isEqualTo(0);
+    ))).isEqualTo(-8);
     assertThat(service.getCurrentValue(List.of(
         TradeEntityFixture.newTradeEntity(50, 10, 4, OrderSide.BUY),
         TradeEntityFixture.newTradeEntity(60, 10, 4, OrderSide.SELL)
-    ))).isEqualTo(100);
+    ))).isEqualTo(92);
     assertThat(service.getCurrentValue(List.of(
         TradeEntityFixture.newTradeEntity(50, 10, 4, OrderSide.BUY),
         TradeEntityFixture.newTradeEntity(50, 10, 4, OrderSide.BUY),
         TradeEntityFixture.newTradeEntity(60, 10, 4, OrderSide.SELL)
-    ))).isEqualTo(-396);
+    ))).isEqualTo(-412);
   }
 
   @Test

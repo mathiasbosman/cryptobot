@@ -1,6 +1,7 @@
 package be.mathiasbosman.cryptobot.services;
 
 import be.mathiasbosman.cryptobot.api.configuration.BitvavoConfig;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,9 +25,13 @@ public class CronService {
       return;
     }
     cryptoService.sellOnProfit(
-        config.getAutoSellTreshold(),
         config.getDefaultCurrency(),
-        config.getAutoRebuy());
+        config.getCryptos(),
+        config.getDefaultSellTreshold(),
+        Instant.ofEpochMilli(config.getStartTimestamp()),
+        config.isAutoRebuy(),
+        config.isAutoBuyCheapestStaking()
+    );
   }
 
   /**

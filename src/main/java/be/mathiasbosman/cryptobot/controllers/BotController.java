@@ -5,6 +5,7 @@ import be.mathiasbosman.cryptobot.api.entities.Symbol;
 import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
 import be.mathiasbosman.cryptobot.services.CryptoService;
 import be.mathiasbosman.cryptobot.services.TradeService;
+import java.util.Collections;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,7 @@ public class BotController implements ApiController, TradeController {
   @Override
   @GetMapping("/crypto")
   public List<Symbol> getSymbols() {
-    return cryptoService.getCurrentCrypto();
+    return cryptoService.getCurrentCrypto(Collections.emptyList());
   }
 
   @Override

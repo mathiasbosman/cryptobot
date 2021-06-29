@@ -1,17 +1,20 @@
 package be.mathiasbosman.cryptobot.services;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import be.mathiasbosman.cryptobot.api.configuration.BitvavoConfig.CryptoDetail;
 import be.mathiasbosman.cryptobot.api.entities.OrderSide;
+import be.mathiasbosman.cryptobot.fxtures.CryptoDetailFixture;
 import be.mathiasbosman.cryptobot.fxtures.TradeEntityFixture;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
 class BitvavoServiceTest {
 
-  private final BitvavoService service = new BitvavoService(null, null, null);
+  private final BitvavoService service = new BitvavoService(null, null);
 
   @Test
   void hasProfit() {
@@ -46,5 +49,15 @@ class BitvavoServiceTest {
   @Test
   void getFee() {
     assertThat(service.getFee(100, 0.5, 0.0025)).isEqualTo(0.13);
+  }
+
+  @Test
+  void getStakingSymbols() {
+    Map<String, CryptoDetail> cryptos = Map.of(
+        "ABC", CryptoDetailFixture.newCryptoDetail(false),
+        "DEF", CryptoDetailFixture.newCryptoDetail(true),
+        "GHI", CryptoDetailFixture.newCryptoDetail(true)
+    );
+    assertThat(service.getStakingSymbols(cryptos)).containsExactlyInAnyOrder("DEF", "GHI");
   }
 }

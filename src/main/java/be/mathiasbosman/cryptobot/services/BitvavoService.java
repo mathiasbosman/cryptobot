@@ -1,6 +1,6 @@
 package be.mathiasbosman.cryptobot.services;
 
-import be.mathiasbosman.cryptobot.api.configuration.BitvavoConfig;
+import be.mathiasbosman.cryptobot.api.configuration.BitvavoConfig.CryptoDetail;
 import be.mathiasbosman.cryptobot.api.consumers.BitvavoConsumer;
 import be.mathiasbosman.cryptobot.api.entities.OrderSide;
 import be.mathiasbosman.cryptobot.api.entities.OrderType;
@@ -10,7 +10,11 @@ import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoOrderResponse;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoSymbol;
 import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -23,7 +27,6 @@ import org.springframework.stereotype.Service;
 public class BitvavoService implements CryptoService {
 
   private final BitvavoConsumer apiConsumer;
-  private final BitvavoConfig config;
   private final TradeService tradeService;
 
   /**
@@ -40,12 +43,13 @@ public class BitvavoService implements CryptoService {
   /**
    * Get all symbols that currently have an available amount except the currency symbol configured
    *
+   * @param exclusions List of symbol codes to exclude
    * @return List of symbols
    */
   @Override
-  public List<Symbol> getCurrentCrypto() {
+  public List<Symbol> getCurrentCrypto(List<String> exclusions) {
     return apiConsumer.getSymbols().stream()
-        .filter(s -> s.getAvailable() > 0 && !s.getCode().equals(config.getDefaultCurrency()))
+        .filter(s -> s.getAvailable() > 0 && !exclusions.contains(s.getCode()))
         .collect(Collectors.toList());
   }
 
@@ -99,51 +103,77 @@ public class BitvavoService implements CryptoService {
     return apiConsumer.getTickerPrice(marketCode).getPrice();
   }
 
-  /**
-   * Sells the asset if the profit treshold is reached
-   *
-   * @param profitTreshold The profit treshold in percentages
-   * @param liquidCurrency The code of the liquid currency (for example EUR)
-   * @param autoRebuy      the amount to automatically rebuy. If not available the minimum will be
-   *                       used
-   */
   @Override
-  public void sellOnProfit(double profitTreshold, String liquidCurrency, double autoRebuy) {
-    if (profitTreshold <= 0) {
-      log.warn("No profit percentage set. Will not auto sell.");
+  public void sellOnProfit(String currencySymbolCode,
+      Map<String, CryptoDetail> cryptoDetails, double defaultSellTreshold,
+      Instant defaultStartTime, boolean autoRebuy, boolean autoBuyCheapestStaking) {
+    List<Symbol> currentCrypto = getCurrentCrypto(Collections.singletonList(currencySymbolCode));
+    if (currentCrypto.isEmpty()) {
+      log.warn("Not holding any crypto.");
       return;
     }
-    log.debug("Checking auto profits with a treshold of {}%", profitTreshold);
-    for (Symbol symbol : getCurrentCrypto()) {
-      double availableAmount = symbol.getAvailable();
-      String marketCode = getMarketName(symbol.getCode(), liquidCurrency);
-      // update trades first if needed
-      updateTrades(marketCode);
+    Fees fees = apiConsumer.getAccountInfo().getFees();
+    for (Symbol symbol : currentCrypto) {
+      String symbolCode = symbol.getCode();
+      CryptoDetail cryptoDetail = cryptoDetails.get(symbol.getCode());
+      double sellTreshold =
+          cryptoDetail != null ? cryptoDetail.getSellTreshold() : defaultSellTreshold;
+      if (sellTreshold <= 0) {
+        log.warn("No sell treshold could be determined for {}.", symbolCode);
+        continue;
+      }
+      log.debug("Checking profit for {}. Sell treshold: {}", symbolCode, sellTreshold);
+      String marketCode = getMarketName(symbol.getCode(), currencySymbolCode);
+      TradeEntity latestTrade = tradeService.getLatestTrade(marketCode);
+      updateTrades(marketCode,
+          latestTrade.getTimestamp() != null ? latestTrade.getTimestamp() : defaultStartTime);
+      double available = symbol.getAvailable();
       double currentValue = getCurrentValue(tradeService.getAllTrades(marketCode));
       double marketPrice = getMarketPrice(marketCode);
-      Fees fees = apiConsumer.getAccountInfo().getFees();
-      double fee = getFee(availableAmount, marketPrice, fees.getMaker());
-      if (hasProfit(marketPrice, availableAmount, currentValue, fee, profitTreshold)) {
-        BitvavoOrderResponse order = sell(marketCode, availableAmount);
-        log.info("{} sold {} at {}. (fee: {}) ",
-            order.getMarketCode(), order.getFilledAmount(), order.getPrice(), order.getFeePaid());
+      double fee = getFee(available, marketPrice, fees.getMaker());
+      if (!hasProfit(marketPrice, available, currentValue, fee, sellTreshold)) {
+        continue;
+      }
+      BitvavoOrderResponse sellOrder = sell(marketCode, available);
+      log.info("{}: sold {} at {} (fee: {})",
+          sellOrder.getMarketCode(), sellOrder.getFilledAmount(), sellOrder.getPrice(),
+          sellOrder.getFeePaid());
+      if (!autoRebuy || (cryptoDetail == null && !autoBuyCheapestStaking)) {
+        continue;
+      }
+      BitvavoSymbol currencySymbol = apiConsumer.getSymbol(currencySymbolCode);
+      double availableCurrency = currencySymbol.getAvailable();
 
-        if (autoRebuy > 0) {
-          BitvavoSymbol currency = apiConsumer.getSymbol(liquidCurrency);
-          if (currency.getAvailable() >= autoRebuy) {
-            buy(marketCode, autoRebuy);
-          }
-        }
+      if (cryptoDetail != null && cryptoDetail.getRebuyAt() > 0) {
+        double amount = Math.min(availableCurrency, cryptoDetail.getRebuyAt());
+        buy(marketCode, amount);
+        continue;
+      }
+
+      if (autoBuyCheapestStaking) {
+        String cheapestStaking = getCheapestStaking(cryptoDetails, currencySymbolCode);
+        buy(getMarketName(cheapestStaking, currencySymbolCode), availableCurrency);
       }
     }
   }
 
-  private void updateTrades(String marketCode) {
-    TradeEntity latestTrade = tradeService.getLatestTrade(marketCode);
-    Instant latestTimestamp = latestTrade != null
-        ? latestTrade.getTimestamp()
-        : Instant.ofEpochMilli(config.getStartTimestamp());
-    apiConsumer.getTrades(marketCode, latestTimestamp)
+  List<String> getStakingSymbols(Map<String, CryptoDetail> cryptos) {
+    return cryptos.entrySet().stream()
+        .filter(entry -> entry.getValue().isHasStaking())
+        .map(Entry::getKey)
+        .collect(Collectors.toList());
+  }
+
+  private String getCheapestStaking(Map<String, CryptoDetail> cryptos, String currencySymbolCode) {
+    List<String> stakingSymbols = getStakingSymbols(cryptos);
+    Map<String, Double> priceMap = new HashMap<>(stakingSymbols.size());
+    stakingSymbols.forEach(symbolCode -> priceMap
+        .put(symbolCode, getMarketPrice(getMarketName(symbolCode, currencySymbolCode))));
+    return Collections.min(priceMap.entrySet(), Map.Entry.comparingByValue()).getKey();
+  }
+
+  private void updateTrades(String marketCode, Instant since) {
+    apiConsumer.getTrades(marketCode, since != null ? since : Instant.EPOCH)
         .forEach(t -> tradeService.save(TradeService.createTradeEntity(t)));
   }
 
@@ -163,7 +193,11 @@ public class BitvavoService implements CryptoService {
     double absValue = Math.abs(currentValue);
     double valueToIncrease = absValue * (profitTreshold / 100);
     double valueToPass = absValue + valueToIncrease;
-    return estimation >= valueToPass;
+    boolean hasProfit = estimation >= valueToPass;
+    if (hasProfit) {
+      log.info("Estimating profit (> {}%). {} over {}", profitTreshold, estimation, valueToPass);
+    }
+    return hasProfit;
   }
 
   /**
@@ -218,7 +252,7 @@ public class BitvavoService implements CryptoService {
       return;
     }
     BitvavoSymbol symbol = apiConsumer.getSymbol(targetSymbol);
-    log.info("Checking for auto redrawal. Currently available: {}", symbol.getAvailable());
+    log.info("Checking for auto withdrawal. Currently available: {}", symbol.getAvailable());
     if (treshold <= symbol.getAvailable()) {
       double toWithdraw = symbol.getAvailable() - treshold;
       log.info("Withdrawing {} to {}", toWithdraw, address);

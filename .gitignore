@@ -6,6 +6,7 @@ target/
 
 ### Spring ###
 *-dev.yaml
+application-pi.yaml
 
 ### STS ###
 .apt_generated

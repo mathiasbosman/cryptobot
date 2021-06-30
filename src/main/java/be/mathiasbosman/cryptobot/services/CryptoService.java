@@ -1,29 +1,41 @@
 package be.mathiasbosman.cryptobot.services;
 
-import be.mathiasbosman.cryptobot.api.configuration.BitvavoConfig.CryptoDetail;
-import be.mathiasbosman.cryptobot.api.entities.Order;
-import be.mathiasbosman.cryptobot.api.entities.Symbol;
-import java.time.Instant;
+import be.mathiasbosman.cryptobot.persistency.entities.CryptoEntity;
+import be.mathiasbosman.cryptobot.persistency.repositories.CryptoRepository;
 import java.util.List;
-import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-public interface CryptoService {
+@Slf4j
+@Service
+@Transactional
+@AllArgsConstructor
+public class CryptoService extends AbstractEntityService<CryptoEntity> {
 
-  Symbol getSymbol(String symbolCode);
+  private static final Sort defaultSort = Sort.sort(CryptoEntity.class).by(CryptoEntity::getCode)
+      .ascending();
+  private final CryptoRepository repository;
 
-  List<Symbol> getCurrentCrypto(List<String> exclusions);
+  @Override
+  public Sort getDefaultSort() {
+    return defaultSort;
+  }
 
-  Order sell(String symbolCode, double amount);
+  @Override
+  public CryptoEntity save(CryptoEntity entity) {
+    return repository.save(entity);
+  }
 
-  Order buy(String marketCode, double amount);
+  @Transactional(readOnly = true)
+  public List<CryptoEntity> getAllCrypto() {
+    return repository.findAll(getDefaultSort());
+  }
 
-  String getMarketName(String symbolCode, String targetMarketCode);
-
-  void sellOnProfit(String currencySymbolCode,
-      Map<String, CryptoDetail> cryptoDetails, double defaultSellTreshold,
-      Instant defaultStartTime, boolean autoRebuy, boolean autoBuyCheapestStaking);
-
-  void withdraw(String targetSymbol, double treshold, String address);
-
-  double getMarketPrice(String marketCode);
+  @Transactional(readOnly = true)
+  public CryptoEntity getCrypto(String code) {
+    return repository.getByCode(code);
+  }
 }

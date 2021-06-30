@@ -3,7 +3,7 @@ package be.mathiasbosman.cryptobot.controllers;
 import be.mathiasbosman.cryptobot.api.entities.Order;
 import be.mathiasbosman.cryptobot.api.entities.Symbol;
 import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
-import be.mathiasbosman.cryptobot.services.CryptoService;
+import be.mathiasbosman.cryptobot.services.CryptoCurrencyService;
 import be.mathiasbosman.cryptobot.services.TradeService;
 import java.util.Collections;
 import java.util.List;
@@ -19,38 +19,38 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController("/api")
 public class BotController implements ApiController, TradeController {
 
-  private final CryptoService cryptoService;
+  private final CryptoCurrencyService cryptoCurrencyService;
   private final TradeService tradeService;
 
   @Override
   @GetMapping("/symbol")
   public Symbol getSymbol(@RequestParam String symbolCode) {
     log.info("Getting symbol {}", symbolCode);
-    return cryptoService.getSymbol(symbolCode);
+    return cryptoCurrencyService.getSymbol(symbolCode);
   }
 
   @Override
   @GetMapping("/crypto")
   public List<Symbol> getSymbols() {
-    return cryptoService.getCurrentCrypto(Collections.emptyList());
+    return cryptoCurrencyService.getCurrentCrypto(Collections.emptyList());
   }
 
   @Override
   @GetMapping("/market/price")
   public double getTickerPrice(@RequestParam String marketCode) {
-    return cryptoService.getMarketPrice(marketCode);
+    return cryptoCurrencyService.getMarketPrice(marketCode);
   }
 
   @Override
   @PostMapping("/order/buy")
   public Order buy(@RequestParam String marketCode, @RequestParam double amount) {
-    return cryptoService.buy(marketCode, amount);
+    return cryptoCurrencyService.buy(marketCode, amount);
   }
 
   @Override
   @PostMapping("/order/sell")
   public Order sell(String marketCode, double amount) {
-    return cryptoService.sell(marketCode, amount);
+    return cryptoCurrencyService.sell(marketCode, amount);
   }
 
   @Override

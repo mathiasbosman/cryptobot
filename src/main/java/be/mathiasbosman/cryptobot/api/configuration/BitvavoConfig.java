@@ -1,7 +1,6 @@
 package be.mathiasbosman.cryptobot.api.configuration;
 
 import be.mathiasbosman.cryptobot.api.entities.FeeType;
-import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -30,17 +29,13 @@ public class BitvavoConfig {
    */
   private double autoWithdrawTreshold;
   /**
-   * List of crypto with custom settings
-   */
-  private Map<String, CryptoDetail> cryptos;
-  /**
    * Default symbolcode of the currency used
    */
   private String defaultCurrency = "EUR";
   /**
    * Default treshold (in percentage) at which to sell. Can be overriden for individual cryptos
    */
-  private double defaultSellTreshold;
+  private double defaultProfitTreshold;
   /**
    * Address used when auto withdrawing
    */
@@ -74,25 +69,5 @@ public class BitvavoConfig {
     private String tickerPrice;
     private String trades;
     private String withdrawal;
-  }
-
-  @Getter
-  @Setter
-  public static class CryptoDetail {
-
-    /**
-     * The amount of the currency to rebuy once sold
-     */
-    private double rebuyAt = 0;
-
-    /**
-     * The treshold in % this crypto has to surpass before being sold
-     */
-    private double sellTreshold = 0;
-
-    /**
-     * Wether or not staking is available for this crypto
-     */
-    private boolean hasStaking = false;
   }
 }

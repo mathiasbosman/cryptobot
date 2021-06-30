@@ -1,6 +1,5 @@
 package be.mathiasbosman.cryptobot.services;
 
-import be.mathiasbosman.cryptobot.api.configuration.BitvavoConfig.CryptoDetail;
 import be.mathiasbosman.cryptobot.api.consumers.BitvavoConsumer;
 import be.mathiasbosman.cryptobot.api.entities.OrderSide;
 import be.mathiasbosman.cryptobot.api.entities.OrderType;
@@ -8,13 +7,11 @@ import be.mathiasbosman.cryptobot.api.entities.Symbol;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoAccount.Fees;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoOrderResponse;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoSymbol;
+import be.mathiasbosman.cryptobot.persistency.entities.CryptoEntity;
 import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -24,9 +21,10 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class BitvavoService implements CryptoService {
+public class BitvavoService implements CryptoCurrencyService {
 
   private final BitvavoConsumer apiConsumer;
+  private final CryptoService cryptoService;
   private final TradeService tradeService;
 
   /**
@@ -104,8 +102,7 @@ public class BitvavoService implements CryptoService {
   }
 
   @Override
-  public void sellOnProfit(String currencySymbolCode,
-      Map<String, CryptoDetail> cryptoDetails, double defaultSellTreshold,
+  public void sellOnProfit(String currencySymbolCode, double defaultProfitTreshold,
       Instant defaultStartTime, boolean autoRebuy, boolean autoBuyCheapestStaking) {
     List<Symbol> currentCrypto = getCurrentCrypto(Collections.singletonList(currencySymbolCode));
     if (currentCrypto.isEmpty()) {
@@ -115,61 +112,43 @@ public class BitvavoService implements CryptoService {
     Fees fees = apiConsumer.getAccountInfo().getFees();
     for (Symbol symbol : currentCrypto) {
       String symbolCode = symbol.getCode();
-      CryptoDetail cryptoDetail = cryptoDetails.get(symbol.getCode());
-      double sellTreshold =
-          cryptoDetail != null ? cryptoDetail.getSellTreshold() : defaultSellTreshold;
-      if (sellTreshold <= 0) {
+      CryptoEntity cryptoEntity = cryptoService.getCrypto(symbol.getCode());
+      double profitTreshold =
+          cryptoEntity != null ? cryptoEntity.getProfitTreshold() : defaultProfitTreshold;
+      if (profitTreshold <= 0) {
         log.warn("No sell treshold could be determined for {}.", symbolCode);
         continue;
       }
-      log.debug("Checking profit for {}. Sell treshold: {}", symbolCode, sellTreshold);
+      log.debug("Checking profit for {}. Sell treshold: {}", symbolCode, profitTreshold);
       String marketCode = getMarketName(symbol.getCode(), currencySymbolCode);
       TradeEntity latestTrade = tradeService.getLatestTrade(marketCode);
       updateTrades(marketCode,
-          latestTrade.getTimestamp() != null ? latestTrade.getTimestamp() : defaultStartTime);
+          latestTrade != null ? latestTrade.getTimestamp() : defaultStartTime);
       double available = symbol.getAvailable();
       double currentValue = getCurrentValue(tradeService.getAllTrades(marketCode));
       double marketPrice = getMarketPrice(marketCode);
       double fee = getFee(available, marketPrice, fees.getMaker());
-      if (!hasProfit(marketPrice, available, currentValue, fee, sellTreshold)) {
+      if (!hasProfit(marketPrice, available, currentValue, fee, profitTreshold)) {
         continue;
       }
       BitvavoOrderResponse sellOrder = sell(marketCode, available);
       log.info("{}: sold {} at {} (fee: {})",
           sellOrder.getMarketCode(), sellOrder.getFilledAmount(), sellOrder.getPrice(),
           sellOrder.getFeePaid());
-      if (!autoRebuy || (cryptoDetail == null && !autoBuyCheapestStaking)) {
-        continue;
+      Double stopTreshold = cryptoEntity != null ? cryptoEntity.getStopTreshold() : null;
+
+      if (!autoRebuy || (stopTreshold != null && stopTreshold >= marketPrice)) {
+        log.info("Not rebuying. Auto rebuy: {}. Stop treshold: {}. Market price: {}",
+            autoRebuy, stopTreshold, marketPrice);
       }
+
       BitvavoSymbol currencySymbol = apiConsumer.getSymbol(currencySymbolCode);
       double availableCurrency = currencySymbol.getAvailable();
-
-      if (cryptoDetail != null && cryptoDetail.getRebuyAt() > 0) {
-        double amount = Math.min(availableCurrency, cryptoDetail.getRebuyAt());
-        buy(marketCode, amount);
-        continue;
-      }
-
-      if (autoBuyCheapestStaking) {
-        String cheapestStaking = getCheapestStaking(cryptoDetails, currencySymbolCode);
-        buy(getMarketName(cheapestStaking, currencySymbolCode), availableCurrency);
+      // decide amount to check against
+      if (cryptoEntity != null && cryptoEntity.getRebuyAt() != null) {
+        buy(marketCode, Math.min(availableCurrency, cryptoEntity.getRebuyAt()));
       }
     }
-  }
-
-  List<String> getStakingSymbols(Map<String, CryptoDetail> cryptos) {
-    return cryptos.entrySet().stream()
-        .filter(entry -> entry.getValue().isHasStaking())
-        .map(Entry::getKey)
-        .collect(Collectors.toList());
-  }
-
-  private String getCheapestStaking(Map<String, CryptoDetail> cryptos, String currencySymbolCode) {
-    List<String> stakingSymbols = getStakingSymbols(cryptos);
-    Map<String, Double> priceMap = new HashMap<>(stakingSymbols.size());
-    stakingSymbols.forEach(symbolCode -> priceMap
-        .put(symbolCode, getMarketPrice(getMarketName(symbolCode, currencySymbolCode))));
-    return Collections.min(priceMap.entrySet(), Map.Entry.comparingByValue()).getKey();
   }
 
   private void updateTrades(String marketCode, Instant since) {

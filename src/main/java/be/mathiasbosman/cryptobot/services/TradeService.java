@@ -42,6 +42,7 @@ public class TradeService extends AbstractEntityService<TradeEntity> {
     return trade;
   }
 
+  @Override
   public TradeEntity save(TradeEntity t) {
     log.info("Saving trade {} - {} {} at {} (fee: {}) @ {}",
         t.getMarketCode(), t.getOrderSide(), t.getAmount(), t.getPrice(), t.getFeePaid(),

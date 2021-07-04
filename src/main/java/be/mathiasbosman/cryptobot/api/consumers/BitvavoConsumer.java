@@ -114,8 +114,8 @@ public class BitvavoConsumer implements ApiConsumer, SecuredApiConsumer {
 
   @Override
   public List<BitvavoTrade> getTrades(String marketCode, Instant start) {
-    String endpoint = RestUtils
-        .formatUri(endpoints.getTrades(), marketCode, String.valueOf(start.toEpochMilli() + 1));
+    String timeStamp = start != null ? String.valueOf(start.toEpochMilli() + 1) : "0";
+    String endpoint = RestUtils.formatUri(endpoints.getTrades(), marketCode, timeStamp);
     String uri = RestUtils.resolvePath(getBaseUri(), endpoint);
     BitvavoTrade[] trades = restService
         .getEntity(uri, buildHeaders(endpoint), BitvavoTrade[].class);
@@ -180,7 +180,7 @@ public class BitvavoConsumer implements ApiConsumer, SecuredApiConsumer {
       try {
         bodyBuilder.append(jsonMapper.writeValueAsString(bodyObject));
       } catch (JsonProcessingException e) {
-        log.error("Could not parse value to json", e);
+        throw new IllegalArgumentException("Could not parse value to json", e);
       }
     }
     return bodyBuilder.toString();
@@ -204,7 +204,8 @@ public class BitvavoConsumer implements ApiConsumer, SecuredApiConsumer {
   private String getAuthenticationSignature(long time, HttpMethod method, String endpoint,
       String body) {
     if (!StringUtils.hasLength(getSecret()) || !StringUtils.hasLength(getKey())) {
-      log.error("Could not set API key or secret");
+      throw new IllegalStateException(
+          "Could not create authentication signature. The API key or secret is missing.");
     }
     String toHash = time
         + method.name()
@@ -218,9 +219,8 @@ public class BitvavoConsumer implements ApiConsumer, SecuredApiConsumer {
       return new String(Hex.encodeHex(sha256.doFinal(toHash.getBytes(StandardCharsets.UTF_8))));
     } catch (NoSuchAlgorithmException | InvalidKeyException e) {
       log.error("Caught exception while creating signature", e);
+      throw new IllegalStateException("Creating the authentication signature failed", e);
     }
-
-    return null;
   }
 
 }

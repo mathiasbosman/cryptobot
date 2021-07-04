@@ -165,7 +165,7 @@ public class BitvavoService implements CryptoCurrencyService {
   }
 
   private void updateTrades(String marketCode, Instant since) {
-    apiConsumer.getTrades(marketCode, since != null ? since : Instant.EPOCH)
+    apiConsumer.getTrades(marketCode, since)
         .forEach(t -> tradeService.save(TradeService.createTradeEntity(t)));
   }
 

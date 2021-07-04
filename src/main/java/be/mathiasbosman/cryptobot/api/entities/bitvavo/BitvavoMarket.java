@@ -9,11 +9,12 @@ import lombok.Setter;
 @Getter
 @Setter
 public class BitvavoMarket implements Market {
+
   @JsonProperty("market")
   private String code;
   private MarketStatus status;
-  private String quote;
-  private String pricePrecision;
+  private String quoteCurrency;
+  private int pricePrecision;
   @JsonProperty("base")
   private String baseCurrency;
   private double minOrderInQuoteAsset;

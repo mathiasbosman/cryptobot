@@ -54,7 +54,7 @@ public class TradeService extends AbstractEntityService<TradeEntity> {
    * Returns all trades for a certain market
    *
    * @param marketCode The market's code
-   * @return List of TradeEntity
+   * @return list of {@link TradeEntity}
    */
   @Transactional(readOnly = true)
   public List<TradeEntity> getAllTrades(String marketCode) {
@@ -65,13 +65,20 @@ public class TradeService extends AbstractEntityService<TradeEntity> {
    * Returns the latest trade in a certain market
    *
    * @param marketCode Market to search for
-   * @return TradeEntity
+   * @return {@link TradeEntity}
    */
   @Transactional(readOnly = true)
   public TradeEntity getLatestTrade(String marketCode) {
     return repository.findFirstByMarketCodeOrderByTimestampDesc(marketCode);
   }
 
+  /**
+   * Returns the latest trades
+   *
+   * @param limit amount of trades
+   * @return list of {@link TradeEntity}
+   */
+  @Transactional(readOnly = true)
   public List<TradeEntity> getLatestTrades(int limit) {
     Pageable page = PageRequest.of(0, limit, getDefaultSort());
     return repository.findAll(page).getContent();

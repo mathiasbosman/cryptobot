@@ -2,6 +2,7 @@ package be.mathiasbosman.cryptobot.controllers;
 
 import be.mathiasbosman.cryptobot.api.entities.Order;
 import be.mathiasbosman.cryptobot.api.entities.Symbol;
+import be.mathiasbosman.cryptobot.api.entities.TickerPrice;
 import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
 import be.mathiasbosman.cryptobot.services.CryptoCurrencyService;
 import be.mathiasbosman.cryptobot.services.TradeService;
@@ -37,8 +38,8 @@ public class BotController implements ApiController, TradeController {
 
   @Override
   @GetMapping("/market/price")
-  public double getTickerPrice(@RequestParam String marketCode) {
-    return cryptoCurrencyService.getMarketPrice(marketCode);
+  public TickerPrice getTickerPrice(@RequestParam String marketCode) {
+    return cryptoCurrencyService.getTickerPrice(marketCode);
   }
 
   @Override

@@ -1,7 +1,6 @@
 package be.mathiasbosman.cryptobot.services;
 
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -13,13 +12,11 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class BitvavoRestService extends SimpleRestService {
 
-  private final DateTimeFormatter formatter;
   private Integer remainingLimit;
   private Instant resetTime;
 
-  public BitvavoRestService(RestTemplate restTemplate, DateTimeFormatter formatter) {
+  public BitvavoRestService(RestTemplate restTemplate) {
     super(restTemplate);
-    this.formatter = formatter;
   }
 
   /**
@@ -37,7 +34,7 @@ public class BitvavoRestService extends SimpleRestService {
         .ofEpochMilli(Long.parseLong(
             Objects.requireNonNull(headers.get("Bitvavo-Ratelimit-ResetAt")).get(0)));
     log.trace("Post exchange ({}). Remaining limit = {}, reset at {}",
-        endpoint, remainingLimit, formatter.format(resetTime));
+        endpoint, remainingLimit, resetTime);
   }
 
   /**

@@ -1,8 +1,6 @@
 package be.mathiasbosman.cryptobot.utils;
 
 import java.text.MessageFormat;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,10 +26,6 @@ public abstract class RestUtils {
 
   public static String resolveUri(String url, Object... params) {
     return UriComponentsBuilder.fromHttpUrl(formatUri(url, params)).toUriString();
-  }
-
-  public static DateTimeFormatter getDateTimeFormatter(String pattern) {
-    return DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault());
   }
 
   public static <T> List<T> objectArrayToList(T[] array) {

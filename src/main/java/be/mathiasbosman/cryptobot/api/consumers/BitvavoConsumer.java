@@ -55,7 +55,7 @@ public class BitvavoConsumer implements ApiConsumer, SecuredApiConsumer {
     this.apiConfig = apiConfig;
     this.restService = restService;
 
-    // set confgurable fields
+    // set configurable fields
     this.endpoints = bitvavoConfig.getEndpoints();
     this.apiKey = apiConfig.getKey();
     this.apiSecret = apiConfig.getSecret();

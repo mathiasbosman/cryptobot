@@ -4,7 +4,10 @@ import be.mathiasbosman.cryptobot.api.consumers.BitvavoConsumer;
 import be.mathiasbosman.cryptobot.api.entities.OrderSide;
 import be.mathiasbosman.cryptobot.api.entities.OrderType;
 import be.mathiasbosman.cryptobot.api.entities.Symbol;
+import be.mathiasbosman.cryptobot.api.entities.TickerPrice;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoAccount.Fees;
+import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoAsset;
+import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoMarket;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoOrderResponse;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoSymbol;
 import be.mathiasbosman.cryptobot.persistency.entities.CryptoEntity;
@@ -27,6 +30,11 @@ public class BitvavoService implements CryptoCurrencyService {
   private final CryptoService cryptoService;
   private final TradeService tradeService;
 
+  @Override
+  public BitvavoAsset getAsset(String assetCode) {
+    return apiConsumer.getAsset(assetCode);
+  }
+
   /**
    * Returns the crypto Symbol based on its code
    *
@@ -34,8 +42,13 @@ public class BitvavoService implements CryptoCurrencyService {
    * @return Symbol
    */
   @Override
-  public Symbol getSymbol(String symbolCode) {
+  public BitvavoSymbol getSymbol(String symbolCode) {
     return apiConsumer.getSymbol(symbolCode);
+  }
+
+  @Override
+  public BitvavoMarket getMarket(String marketCode) {
+    return apiConsumer.getMarket(marketCode);
   }
 
   /**
@@ -83,7 +96,7 @@ public class BitvavoService implements CryptoCurrencyService {
    *
    * @param sourceCode       The first symbol's code
    * @param targetMarketCode The target's symbol code
-   * @return Marketname (split with -)
+   * @return the marketname (split with -)
    */
   @Override
   public String getMarketName(String sourceCode, String targetMarketCode) {
@@ -97,8 +110,8 @@ public class BitvavoService implements CryptoCurrencyService {
    * @return The market price
    */
   @Override
-  public double getMarketPrice(String marketCode) {
-    return apiConsumer.getTickerPrice(marketCode).getPrice();
+  public TickerPrice getTickerPrice(String marketCode) {
+    return apiConsumer.getTickerPrice(marketCode);
   }
 
   @Override
@@ -126,7 +139,7 @@ public class BitvavoService implements CryptoCurrencyService {
           latestTrade != null ? latestTrade.getTimestamp() : defaultStartTime);
       double available = symbol.getAvailable();
       double currentValue = getCurrentValue(tradeService.getAllTrades(marketCode));
-      double marketPrice = getMarketPrice(marketCode);
+      double marketPrice = getTickerPrice(marketCode).getPrice();
       double fee = getFee(available, marketPrice, fees.getMaker());
       if (!hasProfit(marketPrice, available, currentValue, fee, profitTreshold)) {
         continue;

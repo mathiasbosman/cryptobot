@@ -26,12 +26,14 @@ spring:
     deserialization:
       read-date-timestamps-as-nanoseconds: false
   datasource:
-    url: jdbc:postgresql://localhost:5432/cryptobot
+    url: jdbc:postgresql://localhost:5433/cryptobot
     username: cryptobot
     password: cryptobot
   flyway:
     user: cryptobot_dba
     password: cryptobot_dba
+  application:
+    name: Cryptobot
 logging:
   level:
     ROOT: error

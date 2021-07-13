@@ -12,10 +12,10 @@ import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoOrderResponse;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoSymbol;
 import be.mathiasbosman.cryptobot.persistency.entities.CryptoEntity;
 import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
+import be.mathiasbosman.cryptobot.utils.Numberutils;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -116,6 +116,7 @@ public class BitvavoService implements CryptoCurrencyService {
 
   @Override
   public void sellOnProfit(String currencySymbolCode, double defaultProfitTreshold,
+      Double defaultRebuyAt, Double defaultStopTreshold,
       Instant defaultStartTime, boolean autoRebuy, boolean autoBuyCheapestStaking) {
     List<Symbol> currentCrypto = getCurrentCrypto(Collections.singletonList(currencySymbolCode));
     if (currentCrypto.isEmpty()) {
@@ -125,20 +126,24 @@ public class BitvavoService implements CryptoCurrencyService {
     Fees fees = apiConsumer.getAccountInfo().getFees();
     for (Symbol symbol : currentCrypto) {
       String symbolCode = symbol.getCode();
-      CryptoEntity cryptoEntity = cryptoService.getCrypto(symbol.getCode());
-      double profitTreshold =
-          cryptoEntity != null ? cryptoEntity.getProfitTreshold() : defaultProfitTreshold;
+      CryptoEntity cryptoEntity = cryptoService
+          .getOrCreateCrypto(symbol.getCode(), defaultProfitTreshold, defaultRebuyAt,
+              defaultStopTreshold);
+      double profitTreshold = cryptoEntity.getProfitTreshold();
       if (profitTreshold <= 0) {
         log.warn("No sell treshold could be determined for {}.", symbolCode);
         continue;
       }
       log.debug("Checking profit for {}. Sell treshold: {}", symbolCode, profitTreshold);
       String marketCode = getMarketName(symbol.getCode(), currencySymbolCode);
+
+      // Make sure we got all trades available
       TradeEntity latestTrade = tradeService.getLatestTrade(marketCode);
       updateTrades(marketCode,
           latestTrade != null ? latestTrade.getTimestamp() : defaultStartTime);
       double available = symbol.getAvailable();
-      double currentValue = getCurrentValue(tradeService.getAllTrades(marketCode));
+      double currentValue = tradeService
+          .calculateCurrentValue(tradeService.getAllTrades(marketCode));
       double marketPrice = getTickerPrice(marketCode).getPrice();
       double fee = getFee(available, marketPrice, fees.getMaker());
       if (!hasProfit(marketPrice, available, currentValue, fee, profitTreshold)) {
@@ -148,7 +153,7 @@ public class BitvavoService implements CryptoCurrencyService {
       log.info("{}: sold {} at {} (fee: {})",
           sellOrder.getMarketCode(), sellOrder.getFilledAmount(), sellOrder.getPrice(),
           sellOrder.getFeePaid());
-      Double stopTreshold = cryptoEntity != null ? cryptoEntity.getStopTreshold() : null;
+      Double stopTreshold = cryptoEntity.getStopTreshold();
 
       if (!autoRebuy || (stopTreshold != null && stopTreshold >= marketPrice)) {
         log.info("Not rebuying. Auto rebuy: {}. Stop treshold: {}. Market price: {}",
@@ -158,7 +163,7 @@ public class BitvavoService implements CryptoCurrencyService {
       BitvavoSymbol currencySymbol = apiConsumer.getSymbol(currencySymbolCode);
       double availableCurrency = currencySymbol.getAvailable();
       // decide amount to check against
-      if (cryptoEntity != null && cryptoEntity.getRebuyAt() != null) {
+      if (cryptoEntity.getRebuyAt() != null) {
         buy(marketCode, Math.min(availableCurrency, cryptoEntity.getRebuyAt()));
       }
     }
@@ -186,9 +191,14 @@ public class BitvavoService implements CryptoCurrencyService {
     double valueToIncrease = absValue * (profitTreshold / 100);
     double valueToPass = absValue + valueToIncrease;
     boolean hasProfit = estimation >= valueToPass;
-    if (hasProfit) {
-      log.info("Estimating profit (> {}%). {} over {}", profitTreshold, estimation, valueToPass);
-    }
+
+    double diff = estimation - valueToPass;
+    double percentageDiff = diff / valueToPass * 100;
+    log.debug("Estimating profit (> {}%). {} over {} (= {}%)",
+        profitTreshold,
+        Numberutils.format(estimation, 4),
+        Numberutils.format(valueToPass, 4),
+        Numberutils.format(percentageDiff, 2));
     return hasProfit;
   }
 
@@ -204,30 +214,6 @@ public class BitvavoService implements CryptoCurrencyService {
     double subCost = amount * price;
     double fee = subCost * feeMultiplier;
     return Math.ceil(fee * 100) / 100.0;
-  }
-
-  /**
-   * Gets the current value of trades
-   *
-   * @param trades The trades that need to be checked
-   * @return double
-   */
-  double getCurrentValue(List<TradeEntity> trades) {
-    AtomicReference<Double> value = new AtomicReference<>(0.0);
-    trades.forEach(t -> {
-      double cost = calculateCost(t);
-      value.updateAndGet(v -> t.getOrderSide().equals(OrderSide.BUY)
-          ? v - cost : v + cost);
-    });
-    return value.get();
-  }
-
-  double calculateCost(TradeEntity tradeEntity) {
-    double subCost = tradeEntity.getAmount() * tradeEntity.getPrice();
-    double feePaid = tradeEntity.getFeePaid();
-    return tradeEntity.getOrderSide().equals(OrderSide.BUY)
-        ? subCost + feePaid
-        : subCost - feePaid;
   }
 
   /**

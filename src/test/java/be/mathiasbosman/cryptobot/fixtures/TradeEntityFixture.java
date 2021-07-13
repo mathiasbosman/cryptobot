@@ -1,4 +1,4 @@
-package be.mathiasbosman.cryptobot.fxtures;
+package be.mathiasbosman.cryptobot.fixtures;
 
 import be.mathiasbosman.cryptobot.api.entities.OrderSide;
 import be.mathiasbosman.cryptobot.api.entities.OrderType;

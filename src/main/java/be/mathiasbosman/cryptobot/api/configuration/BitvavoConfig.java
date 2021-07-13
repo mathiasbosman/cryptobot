@@ -27,7 +27,7 @@ public class BitvavoConfig {
   /**
    * Treshold at which the remaining currency will be withdraw to the withdraw address
    */
-  private double autoWithdrawTreshold;
+  private double autoWithdrawTreshold = Double.MAX_VALUE;
   /**
    * Default symbolcode of the currency used
    */
@@ -35,7 +35,18 @@ public class BitvavoConfig {
   /**
    * Default treshold (in percentage) at which to sell. Can be overriden for individual cryptos
    */
-  private double defaultProfitTreshold;
+  private Double defaultProfitTreshold = null;
+
+  /**
+   * Deafult amount (in quote currency) to rebuy at; if none set no rebuy will take place
+   */
+  private Double defaultRebuyAt = null;
+
+  /**
+   * Treshold (in base currency) where if the market price surpasses there will be no rebuy. If not
+   * set this will not be taken into account
+   */
+  private Double defaultStopTreshold = null;
   /**
    * Address used when auto withdrawing
    */
@@ -47,7 +58,7 @@ public class BitvavoConfig {
   /**
    * Timestamp at which to start to calculate current values
    */
-  private long startTimestamp = 0;
+  private long startTimestamp = Long.MIN_VALUE;
 
   /**
    * List of endpoints;

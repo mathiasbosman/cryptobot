@@ -24,7 +24,8 @@ public interface CryptoCurrencyService {
 
   String getMarketName(String symbolCode, String targetMarketCode);
 
-  void sellOnProfit(String currencySymbolCode, double defaultSellTreshold,
+  void sellOnProfit(String currencySymbolCode, double defaultProfitTreshold,
+      Double defaultRebuyAt, Double defaultStopTreshold,
       Instant defaultStartTime, boolean autoRebuy, boolean autoBuyCheapestStaking);
 
   void withdraw(String targetSymbol, double treshold, String address);

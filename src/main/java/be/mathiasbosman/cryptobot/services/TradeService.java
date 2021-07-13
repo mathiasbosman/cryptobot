@@ -1,10 +1,12 @@
 package be.mathiasbosman.cryptobot.services;
 
+import be.mathiasbosman.cryptobot.api.entities.OrderSide;
 import be.mathiasbosman.cryptobot.api.entities.OrderType;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoTrade;
 import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
 import be.mathiasbosman.cryptobot.persistency.repositories.TradeRepository;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -82,5 +84,29 @@ public class TradeService extends AbstractEntityService<TradeEntity> {
   public List<TradeEntity> getLatestTrades(int limit) {
     Pageable page = PageRequest.of(0, limit, getDefaultSort());
     return repository.findAll(page).getContent();
+  }
+
+  /**
+   * Gets the current value of trades for a certain market
+   *
+   * @param trades The trades that need to be checked
+   * @return double
+   */
+  public double calculateCurrentValue(List<TradeEntity> trades) {
+    AtomicReference<Double> value = new AtomicReference<>(0.0);
+    trades.forEach(t -> {
+      double cost = calculateCost(t);
+      value.updateAndGet(v -> t.getOrderSide().equals(OrderSide.BUY)
+          ? v - cost : v + cost);
+    });
+    return value.get();
+  }
+
+  double calculateCost(TradeEntity tradeEntity) {
+    double subCost = tradeEntity.getAmount() * tradeEntity.getPrice();
+    double feePaid = tradeEntity.getFeePaid();
+    return tradeEntity.getOrderSide().equals(OrderSide.BUY)
+        ? subCost + feePaid
+        : subCost - feePaid;
   }
 }

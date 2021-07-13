@@ -27,6 +27,8 @@ public class CronService {
     cryptoService.sellOnProfit(
         config.getDefaultCurrency(),
         config.getDefaultProfitTreshold(),
+        config.getDefaultRebuyAt(),
+        config.getDefaultStopTreshold(),
         Instant.ofEpochMilli(config.getStartTimestamp()),
         config.isAutoRebuy(),
         config.isAutoBuyCheapestStaking()

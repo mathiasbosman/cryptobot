@@ -38,7 +38,7 @@ public class BitvavoService implements CryptoCurrencyService {
   /**
    * Returns the crypto Symbol based on its code
    *
-   * @param symbolCode The symbolcode
+   * @param symbolCode The symbol's code
    * @return Symbol
    */
   @Override
@@ -65,7 +65,7 @@ public class BitvavoService implements CryptoCurrencyService {
   }
 
   /**
-   * Selss a certain amount in a certain market
+   * Sels a certain amount in a certain market
    *
    * @param marketCode Market to sell in
    * @param amount     Amount to sell
@@ -96,7 +96,7 @@ public class BitvavoService implements CryptoCurrencyService {
    *
    * @param sourceCode       The first symbol's code
    * @param targetMarketCode The target's symbol code
-   * @return the marketname (split with -)
+   * @return the market's name (split with -)
    */
   @Override
   public String getMarketName(String sourceCode, String targetMarketCode) {
@@ -104,7 +104,7 @@ public class BitvavoService implements CryptoCurrencyService {
   }
 
   /**
-   * Reteruns the market price (ticker price) of a market
+   * Returns the market price (ticker price) of a market
    *
    * @param marketCode The market's code
    * @return The market price
@@ -115,9 +115,9 @@ public class BitvavoService implements CryptoCurrencyService {
   }
 
   @Override
-  public void sellOnProfit(String currencySymbolCode, double defaultProfitTreshold,
-      Double defaultRebuyAt, Double defaultStopTreshold,
-      Instant defaultStartTime, boolean autoRebuy, boolean autoBuyCheapestStaking) {
+  public void sellOnProfit(String currencySymbolCode, double defaultProfitThreshold,
+      Double defaultReBuyAt, Double defaultStopThreshold,
+      Instant defaultStartTime, boolean autoReBuy, boolean autoBuyCheapestStaking) {
     List<Symbol> currentCrypto = getCurrentCrypto(Collections.singletonList(currencySymbolCode));
     if (currentCrypto.isEmpty()) {
       log.warn("Not holding any crypto.");
@@ -127,14 +127,14 @@ public class BitvavoService implements CryptoCurrencyService {
     for (Symbol symbol : currentCrypto) {
       String symbolCode = symbol.getCode();
       CryptoEntity cryptoEntity = cryptoService
-          .getOrCreateCrypto(symbol.getCode(), defaultProfitTreshold, defaultRebuyAt,
-              defaultStopTreshold);
-      double profitTreshold = cryptoEntity.getProfitTreshold();
-      if (profitTreshold <= 0) {
-        log.warn("No sell treshold could be determined for {}.", symbolCode);
+          .getOrCreateCrypto(symbol.getCode(), defaultProfitThreshold, defaultReBuyAt,
+              defaultStopThreshold);
+      double profitThreshold = cryptoEntity.getProfitThreshold();
+      if (profitThreshold <= 0) {
+        log.warn("No sell threshold could be determined for {}.", symbolCode);
         continue;
       }
-      log.debug("Checking profit for {}. Sell treshold: {}", symbolCode, profitTreshold);
+      log.debug("Checking profit for {}. Sell threshold: {}", symbolCode, profitThreshold);
       String marketCode = getMarketName(symbol.getCode(), currencySymbolCode);
 
       // Make sure we got all trades available
@@ -146,25 +146,25 @@ public class BitvavoService implements CryptoCurrencyService {
           .calculateCurrentValue(tradeService.getAllTrades(marketCode));
       double marketPrice = getTickerPrice(marketCode).getPrice();
       double fee = getFee(available, marketPrice, fees.getMaker());
-      if (!hasProfit(marketPrice, available, currentValue, fee, profitTreshold)) {
+      if (!hasProfit(marketPrice, available, currentValue, fee, profitThreshold)) {
         continue;
       }
       BitvavoOrderResponse sellOrder = sell(marketCode, available);
       log.info("{}: sold {} at {} (fee: {})",
           sellOrder.getMarketCode(), sellOrder.getFilledAmount(), sellOrder.getPrice(),
           sellOrder.getFeePaid());
-      Double stopTreshold = cryptoEntity.getStopTreshold();
+      Double stopThreshold = cryptoEntity.getStopThreshold();
 
-      if (!autoRebuy || (stopTreshold != null && stopTreshold >= marketPrice)) {
-        log.info("Not rebuying. Auto rebuy: {}. Stop treshold: {}. Market price: {}",
-            autoRebuy, stopTreshold, marketPrice);
+      if (!autoReBuy || (stopThreshold != null && stopThreshold >= marketPrice)) {
+        log.info("Not rebuying. Auto rebuy: {}. Stop threshold: {}. Market price: {}",
+            autoReBuy, stopThreshold, marketPrice);
       }
 
       BitvavoSymbol currencySymbol = apiConsumer.getSymbol(currencySymbolCode);
       double availableCurrency = currencySymbol.getAvailable();
       // decide amount to check against
-      if (cryptoEntity.getRebuyAt() != null) {
-        buy(marketCode, Math.min(availableCurrency, cryptoEntity.getRebuyAt()));
+      if (cryptoEntity.getReBuyAt() != null) {
+        buy(marketCode, Math.min(availableCurrency, cryptoEntity.getReBuyAt()));
       }
     }
   }
@@ -181,21 +181,21 @@ public class BitvavoService implements CryptoCurrencyService {
    * @param availableAmount The amount that would be sold
    * @param currentValue    The current value we hold
    * @param fee             The fee that has to be paid
-   * @param profitTreshold  The treshold in percentages that needs to be met
+   * @param profitThreshold  The threshold in percentages that needs to be met
    * @return boolean
    */
   boolean hasProfit(double marketPrice, double availableAmount, double currentValue, double fee,
-      double profitTreshold) {
+      double profitThreshold) {
     double estimation = availableAmount * marketPrice - fee;
     double absValue = Math.abs(currentValue);
-    double valueToIncrease = absValue * (profitTreshold / 100);
+    double valueToIncrease = absValue * (profitThreshold / 100);
     double valueToPass = absValue + valueToIncrease;
     boolean hasProfit = estimation >= valueToPass;
 
     double diff = estimation - valueToPass;
     double percentageDiff = diff / valueToPass * 100;
     log.debug("Estimating profit (> {}%). {} over {} (= {}%)",
-        profitTreshold,
+        profitThreshold,
         Numberutils.format(estimation, 4),
         Numberutils.format(valueToPass, 4),
         Numberutils.format(percentageDiff, 2));
@@ -217,22 +217,22 @@ public class BitvavoService implements CryptoCurrencyService {
   }
 
   /**
-   * Withdraw a certain symbol amount to the given address based on a treshold
+   * Withdraw a certain symbol amount to the given address based on a threshold
    *
-   * @param targetSymbol The symbol to withdaw
-   * @param treshold     The treshold that needs to be passed
+   * @param targetSymbol The symbol to withdraw
+   * @param threshold     The threshold that needs to be passed
    * @param address      The target address
    */
   @Override
-  public void withdraw(String targetSymbol, double treshold, String address) {
-    if (0 >= treshold) {
-      log.warn("No withdrawal treshold set. Not withdrawing.");
+  public void withdraw(String targetSymbol, double threshold, String address) {
+    if (0 >= threshold) {
+      log.warn("No withdrawal threshold set. Not withdrawing.");
       return;
     }
     BitvavoSymbol symbol = apiConsumer.getSymbol(targetSymbol);
     log.info("Checking for auto withdrawal. Currently available: {}", symbol.getAvailable());
-    if (treshold <= symbol.getAvailable()) {
-      double toWithdraw = symbol.getAvailable() - treshold;
+    if (threshold <= symbol.getAvailable()) {
+      double toWithdraw = symbol.getAvailable() - threshold;
       log.info("Withdrawing {} to {}", toWithdraw, address);
       apiConsumer.withdraw(targetSymbol, toWithdraw, address);
     }

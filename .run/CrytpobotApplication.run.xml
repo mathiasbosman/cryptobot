@@ -1,27 +1,25 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" factoryName="Spring Boot" name="CrytpobotApplication"
-      type="SpringBootApplicationConfigurationType">
+  <configuration default="false" name="CrytpobotApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="cryptobot" />
     <extension name="net.ashald.envfile">
       <ENTRIES>
-        <ENTRY IS_ENABLED="true" PARSER="runconfig"/>
+        <ENTRY IS_ENABLED="true" PARSER="runconfig" />
       </ENTRIES>
-      <option name="IS_SUBST" value="false"/>
-      <option name="IS_PATH_MACRO_SUPPORTED" value="false"/>
-      <option name="IS_IGNORE_MISSING_FILES" value="false"/>
-      <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false"/>
-      <option name="IS_ENABLED" value="false"/>
+      <option name="IS_SUBST" value="false" />
+      <option name="IS_PATH_MACRO_SUPPORTED" value="false" />
+      <option name="IS_IGNORE_MISSING_FILES" value="false" />
+      <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
+      <option name="IS_ENABLED" value="false" />
     </extension>
+    <option name="SPRING_BOOT_MAIN_CLASS" value="be.mathiasbosman.cryptobot.CryptobotApplication" />
+    <option name="ENABLE_LAUNCH_OPTIMIZATION" value="false" />
+    <option name="HIDE_BANNER" value="true" />
+    <option name="ACTIVE_PROFILES" value="dev" />
+    <option name="ALTERNATIVE_JRE_PATH" />
+    <option name="SHORTEN_COMMAND_LINE" value="NONE" />
     <method v="2">
-      <option enabled="true" name="Make"/>
-      <option enabled="true" name="RunConfigurationTask"
-          run_configuration_name=".docker: Compose Deployment"
-          run_configuration_type="docker-deploy"/>
+      <option name="Make" enabled="true" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name=".docker: Compose Deployment" run_configuration_type="docker-deploy" />
     </method>
-    <module name="cryptobot"/>
-    <option name="HIDE_BANNER" value="true"/>
-    <option name="ACTIVE_PROFILES" value="dev"/>
-    <option name="ALTERNATIVE_JRE_PATH"/>
-    <option name="SHORTEN_COMMAND_LINE" value="NONE"/>
-    <option name="SPRING_BOOT_MAIN_CLASS" value="be.mathiasbosman.cryptobot.CryptobotApplication"/>
   </configuration>
 </component>

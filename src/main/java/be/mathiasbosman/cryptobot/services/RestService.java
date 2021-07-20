@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 public interface RestService {
 
   /**
-   * Wether or not the API can be called
+   * Whether or not the API can be called
    *
    * @return boolean
    */
@@ -60,7 +60,7 @@ public interface RestService {
   <T> T getEntity(String endpoint, HttpHeaders headers, Class<T> objectClass);
 
   /**
-   * Exectue a get call
+   * Execute a get call
    *
    * @param endpoint    the endpoint to call
    * @param headers     {@link HttpHeaders} to send

@@ -16,7 +16,7 @@ public class CryptoEntity implements DbEntity {
   @GeneratedValue
   private UUID id;
   private String code;
-  private Double rebuyAt;
-  private Double profitTreshold;
-  private Double stopTreshold;
+  private Double reBuyAt;
+  private Double profitThreshold;
+  private Double stopThreshold;
 }

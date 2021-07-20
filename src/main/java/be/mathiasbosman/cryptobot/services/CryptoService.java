@@ -40,8 +40,8 @@ public class CryptoService extends AbstractEntityService<CryptoEntity> {
   }
 
   @Transactional
-  public CryptoEntity getOrCreateCrypto(String code, Double profitTreshold, Double rebuyAt,
-      Double stopTreshold) {
+  public CryptoEntity getOrCreateCrypto(String code, Double profitThreshold, Double rebuyAt,
+      Double stopThreshold) {
     CryptoEntity crypto = getCrypto(code);
     if (crypto != null) {
       return crypto;
@@ -49,9 +49,9 @@ public class CryptoService extends AbstractEntityService<CryptoEntity> {
 
     CryptoEntity newCrypto = new CryptoEntity();
     newCrypto.setCode(code);
-    newCrypto.setProfitTreshold(profitTreshold);
-    newCrypto.setRebuyAt(rebuyAt);
-    newCrypto.setStopTreshold(stopTreshold);
+    newCrypto.setProfitThreshold(profitThreshold);
+    newCrypto.setReBuyAt(rebuyAt);
+    newCrypto.setStopThreshold(stopThreshold);
     return save(newCrypto);
   }
 }

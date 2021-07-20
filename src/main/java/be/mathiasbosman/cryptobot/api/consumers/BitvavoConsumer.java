@@ -190,6 +190,7 @@ public class BitvavoConsumer implements ApiConsumer, SecuredApiConsumer {
     return buildHeaders(uri, HttpMethod.GET, null);
   }
 
+  @SuppressWarnings("UastIncorrectHttpHeaderInspection")
   private HttpHeaders buildHeaders(String uri, HttpMethod httpMethod, String body) {
     long serverTime = Instant.now().toEpochMilli();
     String signature = getAuthenticationSignature(serverTime, httpMethod, uri, body);

@@ -23,9 +23,10 @@ public class BitvavoRestService extends SimpleRestService {
    * Gets some header information after the exchange has happened
    *
    * @param responseEntity Returned entity
-   * @param endpoint       URI of the endpoing
+   * @param endpoint       URI of the endpoint
    */
   @Override
+  @SuppressWarnings("UastIncorrectHttpHeaderInspection")
   public <T> void postExchange(ResponseEntity<T> responseEntity, String endpoint) {
     HttpHeaders headers = responseEntity.getHeaders();
     remainingLimit = Integer.parseInt(
@@ -38,7 +39,7 @@ public class BitvavoRestService extends SimpleRestService {
   }
 
   /**
-   * Returns wether or not the rest service can be called depending on the remaining limit as
+   * Returns whether or not the rest service can be called depending on the remaining limit as
    * configured.
    *
    * @return true or false
@@ -59,7 +60,7 @@ public class BitvavoRestService extends SimpleRestService {
     return false;
   }
 
-  public boolean canExecute(int limitweight) {
-    return remainingLimit == null || (canExecute() && remainingLimit >= limitweight);
+  public boolean canExecute(int weightLimit) {
+    return remainingLimit == null || (canExecute() && remainingLimit >= weightLimit);
   }
 }

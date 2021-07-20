@@ -19,7 +19,7 @@ bitvavo:
   withdraw-address: ""
   default-currency: EUR
   fee-type: TAKER
-  auto-withdraw-treshold: 100
+  auto-withdraw-threshold: 100
   auto-buy-cheapest-staking: true
 spring:
   jackson:

@@ -26,11 +26,11 @@ public class CronService {
     }
     cryptoService.sellOnProfit(
         config.getDefaultCurrency(),
-        config.getDefaultProfitTreshold(),
-        config.getDefaultRebuyAt(),
-        config.getDefaultStopTreshold(),
+        config.getDefaultProfitThreshold(),
+        config.getDefaultReBuyAt(),
+        config.getDefaultStopThreshold(),
         Instant.ofEpochMilli(config.getStartTimestamp()),
-        config.isAutoRebuy(),
+        config.isAutoReBuy(),
         config.isAutoBuyCheapestStaking()
     );
   }
@@ -45,7 +45,7 @@ public class CronService {
     }
     cryptoService.withdraw(
         config.getDefaultCurrency(),
-        config.getAutoWithdrawTreshold(),
+        config.getAutoWithdrawThreshold(),
         config.getWithdrawAddress()
     );
   }

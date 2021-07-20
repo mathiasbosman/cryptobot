@@ -4,6 +4,6 @@ create table "cryptos"
     constraint cryptos_pk primary key ("id"),
     "code"            varchar(10) not null,
     constraint cryptos_code_uidex unique ("code"),
-    "rebuy_at"        float8,
-    "profit_treshold" float8
+    "re_buy_at"        float8,
+    "profit_threshold" float8
 );

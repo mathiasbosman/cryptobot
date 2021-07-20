@@ -15,38 +15,38 @@ public class BitvavoConfig {
   public static final String PREFIX = "bitvavo";
 
   /**
-   * Wether or not to automatically rebuy
+   * Whether or not to automatically re-buy
    */
-  private boolean autoRebuy = false;
+  private boolean autoReBuy = false;
 
   /**
-   * Indicates if the cheapest staking should be bought if the minimum rebuy treshold cannot be met
+   * Indicates if the cheapest staking should be bought if the minimum re-buy threshold cannot be met
    * after selling an asset
    */
   private boolean autoBuyCheapestStaking = false;
   /**
-   * Treshold at which the remaining currency will be withdraw to the withdraw address
+   * Threshold at which the remaining currency will be withdraw to the withdraw address
    */
-  private double autoWithdrawTreshold = Double.MAX_VALUE;
+  private double autoWithdrawThreshold = Double.MAX_VALUE;
   /**
-   * Default symbolcode of the currency used
+   * Default symbol code of the currency used
    */
   private String defaultCurrency = "EUR";
   /**
-   * Default treshold (in percentage) at which to sell. Can be overriden for individual cryptos
+   * Default threshold (in percentage) at which to sell. Can be overridden for individual cryptos
    */
-  private Double defaultProfitTreshold = null;
+  private Double defaultProfitThreshold = null;
 
   /**
-   * Deafult amount (in quote currency) to rebuy at; if none set no rebuy will take place
+   * Default amount (in quote currency) to re-buy at; if none set no re-buy will take place
    */
-  private Double defaultRebuyAt = null;
+  private Double defaultReBuyAt = null;
 
   /**
-   * Treshold (in base currency) where if the market price surpasses there will be no rebuy. If not
+   * Threshold (in base currency) where if the market price surpasses there will be no re-buy. If not
    * set this will not be taken into account
    */
-  private Double defaultStopTreshold = null;
+  private Double defaultStopThreshold = null;
   /**
    * Address used when auto withdrawing
    */

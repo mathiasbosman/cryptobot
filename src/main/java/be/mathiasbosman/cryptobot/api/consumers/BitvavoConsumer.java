@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -115,7 +116,7 @@ public class BitvavoConsumer implements ApiConsumer, SecuredApiConsumer {
   @Override
   public List<BitvavoTrade> getTrades(String marketCode, Instant start) {
     String timeStamp = start != null ? String.valueOf(start.toEpochMilli() + 1) : "0";
-    String endpoint = RestUtils.formatUri(endpoints.getTrades(), marketCode, timeStamp);
+    String endpoint = MessageFormat.format(endpoints.getTrades(), marketCode, timeStamp);
     String uri = RestUtils.resolvePath(getBaseUri(), endpoint);
     BitvavoTrade[] trades = restService
         .getEntity(uri, buildHeaders(endpoint), BitvavoTrade[].class);
@@ -133,7 +134,7 @@ public class BitvavoConsumer implements ApiConsumer, SecuredApiConsumer {
 
   @Override
   public BitvavoSymbol getSymbol(String symbol) {
-    String endpoint = RestUtils.formatUri(endpoints.getSymbol(), symbol);
+    String endpoint = MessageFormat.format(endpoints.getSymbol(), symbol);
     String uri = RestUtils.resolvePath(getBaseUri(), endpoint);
     BitvavoSymbol[] symbols = restService
         .getEntity(uri, buildHeaders(endpoint), BitvavoSymbol[].class);

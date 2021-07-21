@@ -65,7 +65,7 @@ public class BitvavoService implements CryptoCurrencyService {
   }
 
   /**
-   * Sels a certain amount in a certain market
+   * Sells a certain amount in a certain market
    *
    * @param marketCode Market to sell in
    * @param amount     Amount to sell
@@ -156,7 +156,7 @@ public class BitvavoService implements CryptoCurrencyService {
       Double stopThreshold = cryptoEntity.getStopThreshold();
 
       if (!autoReBuy || (stopThreshold != null && stopThreshold >= marketPrice)) {
-        log.info("Not rebuying. Auto rebuy: {}. Stop threshold: {}. Market price: {}",
+        log.info("Not re-buying. Auto re-buy: {}. Stop threshold: {}. Market price: {}",
             autoReBuy, stopThreshold, marketPrice);
       }
 
@@ -181,7 +181,7 @@ public class BitvavoService implements CryptoCurrencyService {
    * @param availableAmount The amount that would be sold
    * @param currentValue    The current value we hold
    * @param fee             The fee that has to be paid
-   * @param profitThreshold  The threshold in percentages that needs to be met
+   * @param profitThreshold The threshold in percentages that needs to be met
    * @return boolean
    */
   boolean hasProfit(double marketPrice, double availableAmount, double currentValue, double fee,
@@ -220,7 +220,7 @@ public class BitvavoService implements CryptoCurrencyService {
    * Withdraw a certain symbol amount to the given address based on a threshold
    *
    * @param targetSymbol The symbol to withdraw
-   * @param threshold     The threshold that needs to be passed
+   * @param threshold    The threshold that needs to be passed
    * @param address      The target address
    */
   @Override

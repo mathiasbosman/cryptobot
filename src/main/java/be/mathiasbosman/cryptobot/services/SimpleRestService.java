@@ -22,7 +22,7 @@ public abstract class SimpleRestService implements RestService {
 
   @Override
   public void preExchange() {
-
+    // no-op
   }
 
   @Override

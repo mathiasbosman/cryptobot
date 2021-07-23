@@ -2,6 +2,10 @@ api:
   key:
   secret:
   base-url: "https://api.bitvavo.com"
+bot:
+  start-timestamp: 1
+  default-currency: "EUR"
+  fee-type: taker
 bitvavo:
   endpoints:
     account: "/v2/account"
@@ -15,12 +19,8 @@ bitvavo:
     tickerPrice: "/v2/ticker/price?market={0}"
     trades: "/v2/trades?market={0}&start={1}"
     withdrawal: "/v2/withdrawal"
-  start-timestamp: 1
   withdraw-address: ""
-  default-currency: EUR
-  fee-type: TAKER
   auto-withdraw-threshold: 100
-  auto-buy-cheapest-staking: true
 spring:
   jackson:
     deserialization:

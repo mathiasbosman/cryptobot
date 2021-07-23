@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 class BitvavoServiceTest {
 
-  private final BitvavoService service = new BitvavoService(null, null, null);
+  private final BitvavoService service = new BitvavoService(null, null, null, null);
 
   @Test
   void hasProfit() {

@@ -1,6 +1,7 @@
 package be.mathiasbosman.cryptobot.services;
 
 import be.mathiasbosman.cryptobot.api.configuration.BitvavoConfig;
+import be.mathiasbosman.cryptobot.api.configuration.BotConfig;
 import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class CronService {
 
-  private final BitvavoConfig config;
+  private final BitvavoConfig bitvavoConfig;
   private final BitvavoService cryptoService;
   private final BitvavoRestService restService;
 
@@ -24,15 +25,7 @@ public class CronService {
     if (!restService.canExecute(50)) {
       return;
     }
-    cryptoService.sellOnProfit(
-        config.getDefaultCurrency(),
-        config.getDefaultProfitThreshold(),
-        config.getDefaultReBuyAt(),
-        config.getDefaultStopThreshold(),
-        Instant.ofEpochMilli(config.getStartTimestamp()),
-        config.isAutoReBuy(),
-        config.isAutoBuyCheapestStaking()
-    );
+    cryptoService.sellOnProfit();
   }
 
   /**
@@ -44,9 +37,8 @@ public class CronService {
       return;
     }
     cryptoService.withdraw(
-        config.getDefaultCurrency(),
-        config.getAutoWithdrawThreshold(),
-        config.getWithdrawAddress()
+        bitvavoConfig.getAutoWithdrawThreshold(),
+        bitvavoConfig.getWithdrawAddress()
     );
   }
 }

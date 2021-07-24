@@ -8,6 +8,9 @@ target/
 *-dev.yaml
 application-pi.yaml
 
+### H2 ###
+.db
+
 ### STS ###
 .apt_generated
 .classpath

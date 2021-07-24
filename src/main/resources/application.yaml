@@ -26,12 +26,13 @@ spring:
     deserialization:
       read-date-timestamps-as-nanoseconds: false
   datasource:
-    url: jdbc:postgresql://localhost:5433/cryptobot
-    username: cryptobot
-    password: cryptobot
+    url: jdbc:h2:./.db/cryptobot;DATABASE_TO_UPPER=f;
+    username: sa
+    password: password
+    driver-class-name: org.h2.Driver
   flyway:
-    user: cryptobot_dba
-    password: cryptobot_dba
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
   application:
     name: Cryptobot
 logging:

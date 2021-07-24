@@ -209,11 +209,17 @@ public class BitvavoService implements CryptoCurrencyService {
 
     double diff = estimation - valueToPass;
     double percentageDiff = diff / valueToPass * 100;
-    log.debug("Estimating profit (> {}%). {} over {} (= {}%)",
-        profitThreshold,
-        Numberutils.format(estimation, 4),
-        Numberutils.format(valueToPass, 4),
-        Numberutils.format(percentageDiff, 2));
+    if (!hasProfit) {
+      log.debug("Estimating profit (> {}%). {} over {} (= {}%)",
+          profitThreshold,
+          Numberutils.format(estimation, 4),
+          Numberutils.format(valueToPass, 4),
+          Numberutils.format(percentageDiff, 2));
+    } else {
+      log.info("Profit threshold ({}%) exceeded with {}%",
+          profitThreshold,
+          Numberutils.format(percentageDiff, 2));
+    }
     return hasProfit;
   }
 

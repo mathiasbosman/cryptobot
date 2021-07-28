@@ -2,6 +2,7 @@ package be.mathiasbosman.cryptobot.services;
 
 import be.mathiasbosman.cryptobot.api.configuration.BotConfig;
 import be.mathiasbosman.cryptobot.api.consumers.BitvavoConsumer;
+import be.mathiasbosman.cryptobot.api.entities.FeeType;
 import be.mathiasbosman.cryptobot.api.entities.OrderSide;
 import be.mathiasbosman.cryptobot.api.entities.OrderType;
 import be.mathiasbosman.cryptobot.api.entities.Symbol;
@@ -14,6 +15,8 @@ import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoSymbol;
 import be.mathiasbosman.cryptobot.persistency.entities.CryptoEntity;
 import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
 import be.mathiasbosman.cryptobot.utils.Numberutils;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -163,7 +166,9 @@ public class BitvavoService implements CryptoCurrencyService {
       double currentValue = tradeService
           .calculateCurrentValue(tradeService.getAllTrades(marketCode));
       double marketPrice = getTickerPrice(marketCode).getPrice();
-      double fee = getFee(available, marketPrice, fees.getMaker());
+      double feeMultiplier =
+          botConfig.getFeeType().equals(FeeType.TAKER) ? fees.getTaker() : fees.getMaker();
+      double fee = getFee(available, marketPrice, feeMultiplier);
       if (!hasProfit(marketPrice, available, currentValue, fee, profitThreshold)) {
         continue;
       }
@@ -232,16 +237,23 @@ public class BitvavoService implements CryptoCurrencyService {
    * @return double
    */
   double getFee(double amount, double price, double feeMultiplier) {
-    double subCost = amount * price;
-    double fee = subCost * feeMultiplier;
-    return Math.ceil(fee * 100) / 100.0;
+    BigDecimal bAmount = new BigDecimal(Double.toString(amount));
+    BigDecimal bPrice = new BigDecimal(Double.toString(price));
+
+    BigDecimal subCost = bAmount.multiply(bPrice);
+    BigDecimal transactionFee = subCost.multiply(new BigDecimal(Double.toString(feeMultiplier)));
+    BigDecimal transactionCost = subCost.add(transactionFee);
+    BigDecimal transactionCostRounded = transactionCost.setScale(2, RoundingMode.UP);
+    BigDecimal difference = transactionCostRounded.subtract(transactionCost).setScale(8, RoundingMode.HALF_UP);
+    BigDecimal totalFee = transactionFee.add(difference).setScale(4, RoundingMode.UP);
+    return totalFee.doubleValue();
   }
 
   /**
    * Withdraw a certain symbol amount to the given address based on a threshold
    *
-   * @param threshold    The threshold that needs to be passed
-   * @param address      The target address
+   * @param threshold The threshold that needs to be passed
+   * @param address   The target address
    */
   @Override
   public void withdraw(double threshold, String address) {

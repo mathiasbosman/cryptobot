@@ -29,9 +29,12 @@ class TradeServiceTest {
         TradeEntityFixture.newTradeEntity(60, 10, 4, OrderSide.SELL)
     ))).isEqualTo(92);
     assertThat(service.calculateCurrentValue(List.of(
-        TradeEntityFixture.newTradeEntity(50, 10, 4, OrderSide.BUY),
-        TradeEntityFixture.newTradeEntity(50, 10, 4, OrderSide.BUY),
-        TradeEntityFixture.newTradeEntity(60, 10, 4, OrderSide.SELL)
-    ))).isEqualTo(-412);
+        TradeEntityFixture.newTradeEntity(50, 2, 3, OrderSide.BUY),
+        TradeEntityFixture.newTradeEntity(60, 3, 5, OrderSide.BUY),
+        TradeEntityFixture.newTradeEntity(10, 5, 4, OrderSide.SELL)
+    ))).isEqualTo(-242);
+    assertThat(service.calculateCurrentValue(List.of(
+        TradeEntityFixture.newTradeEntity(4951, 0.0331, 0.17190, OrderSide.BUY)
+    ))).isEqualTo(-164.05);
   }
 }

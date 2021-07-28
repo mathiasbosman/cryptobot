@@ -12,4 +12,12 @@ public interface TradeController {
    * @return list of {@link TradeEntity}
    */
   List<TradeEntity> getTrades(int limit);
+
+  /**
+   * Returns saved trades for certain market
+   *
+   * @param marketCode code of the market
+   * @return list of {@link TradeEntity}
+   */
+  List<TradeEntity> getTradesInMarket(String marketCode);
 }

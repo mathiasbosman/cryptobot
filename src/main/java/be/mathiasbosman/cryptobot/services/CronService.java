@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class CronService {
 
+  private final BotConfig botConfig;
   private final BitvavoConfig bitvavoConfig;
   private final BitvavoService cryptoService;
   private final BitvavoRestService restService;
@@ -22,6 +23,9 @@ public class CronService {
    */
   @Scheduled(fixedRate = 15000)
   public void autoSellOnProfit() {
+    if (!botConfig.isAutoSellOnProfit()) {
+      return;
+    }
     if (!restService.canExecute(50)) {
       return;
     }

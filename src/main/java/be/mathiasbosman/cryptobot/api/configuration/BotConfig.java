@@ -19,6 +19,11 @@ public class BotConfig {
   private boolean autoReBuy = false;
 
   /**
+   * Whether or not to automatically sell on profit
+   */
+  private boolean autoSellOnProfit = false;
+
+  /**
    * Default symbol code of the currency used
    */
   private String defaultCurrency = "EUR";

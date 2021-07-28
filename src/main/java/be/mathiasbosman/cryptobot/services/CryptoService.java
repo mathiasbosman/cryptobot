@@ -1,5 +1,6 @@
 package be.mathiasbosman.cryptobot.services;
 
+import be.mathiasbosman.cryptobot.api.dto.CryptoEntityDto;
 import be.mathiasbosman.cryptobot.persistency.entities.CryptoEntity;
 import be.mathiasbosman.cryptobot.persistency.repositories.CryptoRepository;
 import java.util.List;
@@ -40,18 +41,27 @@ public class CryptoService extends AbstractEntityService<CryptoEntity> {
   }
 
   @Transactional
-  public CryptoEntity getOrCreateCrypto(String code, Double profitThreshold, Double rebuyAt,
+  public CryptoEntity getOrCreateCrypto(String code, Double profitThreshold, Double reBuyAt,
       Double stopThreshold) {
     CryptoEntity crypto = getCrypto(code);
     if (crypto != null) {
       return crypto;
     }
+    CryptoEntity newEntity = new CryptoEntity();
+    newEntity.setCode(code);
+    newEntity.setReBuyAt(reBuyAt);
+    newEntity.setStopThreshold(stopThreshold);
+    newEntity.setProfitThreshold(profitThreshold);
+    return save(newEntity);
+  }
 
-    CryptoEntity newCrypto = new CryptoEntity();
-    newCrypto.setCode(code);
-    newCrypto.setProfitThreshold(profitThreshold);
-    newCrypto.setReBuyAt(rebuyAt);
-    newCrypto.setStopThreshold(stopThreshold);
-    return save(newCrypto);
+  @Transactional
+  public CryptoEntity updateCrypto(String code, Double reBuyAt, Double profitThreshold,
+      Double stopThreshold) {
+    CryptoEntity crypto = getCrypto(code);
+    crypto.setReBuyAt(reBuyAt);
+    crypto.setStopThreshold(stopThreshold);
+    crypto.setProfitThreshold(profitThreshold);
+    return save(crypto);
   }
 }

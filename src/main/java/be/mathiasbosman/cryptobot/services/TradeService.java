@@ -5,6 +5,8 @@ import be.mathiasbosman.cryptobot.api.entities.OrderType;
 import be.mathiasbosman.cryptobot.api.entities.bitvavo.BitvavoTrade;
 import be.mathiasbosman.cryptobot.persistency.entities.TradeEntity;
 import be.mathiasbosman.cryptobot.persistency.repositories.TradeRepository;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.AllArgsConstructor;
@@ -93,20 +95,22 @@ public class TradeService extends AbstractEntityService<TradeEntity> {
    * @return double
    */
   public double calculateCurrentValue(List<TradeEntity> trades) {
-    AtomicReference<Double> value = new AtomicReference<>(0.0);
+    AtomicReference<BigDecimal> value = new AtomicReference<>(new BigDecimal(0));
     trades.forEach(t -> {
-      double cost = calculateCost(t);
-      value.updateAndGet(v -> t.getOrderSide().equals(OrderSide.BUY)
-          ? v - cost : v + cost);
+      BigDecimal cost = calculateCost(t);
+      value.updateAndGet(v ->
+          t.getOrderSide().equals(OrderSide.BUY) ? v.subtract(cost) : v.add(cost));
     });
-    return value.get();
+    return value.get().setScale(8, RoundingMode.UP).doubleValue();
   }
 
-  double calculateCost(TradeEntity tradeEntity) {
-    double subCost = tradeEntity.getAmount() * tradeEntity.getPrice();
-    double feePaid = tradeEntity.getFeePaid();
+  BigDecimal calculateCost(TradeEntity tradeEntity) {
+    BigDecimal fee = new BigDecimal(Double.toString(tradeEntity.getFeePaid()));
+    BigDecimal price = new BigDecimal(Double.toString(tradeEntity.getPrice()));
+    BigDecimal amount = new BigDecimal(Double.toString(tradeEntity.getAmount()));
+
     return tradeEntity.getOrderSide().equals(OrderSide.BUY)
-        ? subCost + feePaid
-        : subCost - feePaid;
+        ? price.multiply(amount).add(fee)
+        : price.multiply(amount).subtract(fee);
   }
 }

@@ -6,6 +6,7 @@ bot:
   start-timestamp: 1
   default-currency: "EUR"
   fee-type: taker
+  auto-sell-on-profit: true
 bitvavo:
   endpoints:
     account: "/v2/account"
